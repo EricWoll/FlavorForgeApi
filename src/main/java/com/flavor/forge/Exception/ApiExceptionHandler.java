@@ -1,6 +1,6 @@
 package com.flavor.forge.Exception;
 
-import com.adopt.adopt.Exception.CustomExceptions.*;
+import com.flavor.forge.Exception.CustomExceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -30,6 +30,4 @@ public class ApiExceptionHandler {
 
         return new ResponseEntity<>(apiException, badRequest);
     }
-
-
 }

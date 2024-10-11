@@ -1,8 +1,8 @@
 package com.flavor.forge.Security;
 
-import com.adopt.adopt.Model.ERole;
-import com.adopt.adopt.Security.Jwt.JwtFilter;
-import com.adopt.adopt.Security.Service.UserDetailsServiceImpl;
+import com.flavor.forge.Model.ERole;
+import com.flavor.forge.Security.Jwt.JwtFilter;
+import com.flavor.forge.Security.Service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

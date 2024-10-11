@@ -1,6 +1,6 @@
 package com.flavor.forge.Security.Jwt;
 
-import com.adopt.adopt.Security.Service.UserDetailsServiceImpl;
+import com.flavor.forge.Security.Service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
