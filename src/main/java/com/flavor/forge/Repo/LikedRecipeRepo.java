@@ -13,5 +13,5 @@ public interface LikedRecipeRepo extends MongoRepository<LikedRecipe, ObjectId> 
 
     Optional<LikedRecipe> findByRecipeId(ObjectId id);
 
-    List<LikedRecipe> findAllByUserId(ObjectId id);
+    List<LikedRecipe> findAllByUserId(ObjectId userId);
 }

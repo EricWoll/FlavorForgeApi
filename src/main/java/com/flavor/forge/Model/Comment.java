@@ -16,4 +16,10 @@ public class Comment {
     private ObjectId UserId;
     private ObjectId AttachedId;
     private String CommentText;
+
+    public Comment(ObjectId userId, ObjectId attachedId, String commentText) {
+        UserId = userId;
+        AttachedId = attachedId;
+        CommentText = commentText;
+    }
 }

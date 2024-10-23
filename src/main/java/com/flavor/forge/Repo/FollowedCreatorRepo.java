@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface FollowedCreatorRepo extends MongoRepository<FollowedCreator, ObjectId> {
-    List<FollowedCreator> findAllByUserId(ObjectId id);
+    List<FollowedCreator> findAllByUserId(ObjectId userId);
 }

@@ -5,6 +5,7 @@ import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.AuthResponse;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Repo.FollowedCreatorRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,9 @@ public class UserService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private FollowedCreatorRepo followedCreatorRepo;
 
     @Autowired
     private JwtService jwtService;

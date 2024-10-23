@@ -13,11 +13,11 @@ import java.time.ZonedDateTime;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(value = {
-            AnimalNotFoundException.class,
-            AdoptionRecordNotFoundException.class,
+            CommentExistsException.class,
+            CommentNotFoundException.class,
+            CommentEmptyException.class,
             UserExistsException.class,
-            UserNotFoundException.class,
-            AdoptionRecordExistsException.class
+            UserNotFoundException.class
     })
     public ResponseEntity<Object> handleApiExceptions(Exception e) {
         HttpStatus badRequest = HttpStatus.BAD_REQUEST;
