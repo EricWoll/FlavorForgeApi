@@ -7,7 +7,6 @@ import org.bson.types.ObjectId;
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
 public class AuthResponse {
     private String accessToken;
     private String refreshToken;

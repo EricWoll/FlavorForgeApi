@@ -16,13 +16,13 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${adopt.app.jwtSecret}")
+    @Value("${forge.app.jwtSecret}")
     private String jwtSecret;
 
-    @Value("${adopt.app.jwtExpireMs}")
+    @Value("${forge.app.jwtExpireMs}")
     private long jwtExpireMs;
 
-    @Value("${adopt.app.jwtRefreshExpireMs}")
+    @Value("${forge.app.jwtRefreshExpireMs}")
     private long jwtRefreshExpireMs;
 
     public String generateJwtToken(User user) {

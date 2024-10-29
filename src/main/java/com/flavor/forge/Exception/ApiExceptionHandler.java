@@ -16,6 +16,9 @@ public class ApiExceptionHandler {
             CommentExistsException.class,
             CommentNotFoundException.class,
             CommentEmptyException.class,
+            RecipeEmptyException.class,
+            RecipeExistsException.class,
+            RecipeNotFoundException.class,
             UserExistsException.class,
             UserNotFoundException.class
     })

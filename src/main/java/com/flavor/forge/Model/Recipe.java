@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @Document(collection = "recipe")
 public class Recipe {
 
@@ -22,6 +21,16 @@ public class Recipe {
     private List<String> Steps;
     private String ImageId;
     private int LikesCount;
+
+    public Recipe(ObjectId userId, String recipeName, String recipeDescription, List<String> ingredients, List<String> steps, String imageId, int likesCount) {
+        UserId = userId;
+        RecipeName = recipeName;
+        RecipeDescription = recipeDescription;
+        Ingredients = ingredients;
+        Steps = steps;
+        ImageId = imageId;
+        LikesCount = likesCount;
+    }
 
     public void addLike() {
         LikesCount++;
