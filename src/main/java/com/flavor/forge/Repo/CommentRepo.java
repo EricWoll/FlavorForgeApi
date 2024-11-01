@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface CommentRepo extends MongoRepository<Comment, ObjectId> {
     List<Comment> findAllByAttachedId(ObjectId id);
+    List<Comment> findAllByUserId(ObjectId id);
 }

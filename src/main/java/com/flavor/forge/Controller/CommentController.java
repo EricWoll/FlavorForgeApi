@@ -33,6 +33,13 @@ public class CommentController {
         );
     }
 
+    @GetMapping("/users/{user_id}")
+    public ResponseEntity<List<Comment>> findAllCommentsByUser(@PathVariable ObjectId user_id) {
+        return new ResponseEntity<List<Comment>>(
+                commentService.findAllByUserId(user_id),
+                HttpStatus.OK
+        );
+    }
 
     @PostMapping
     public ResponseEntity<Comment> createComment(@RequestBody Comment payload) {

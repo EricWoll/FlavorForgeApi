@@ -32,6 +32,10 @@ public class CommentService {
         return commentRepo.findAllByAttachedId(id);
     }
 
+    public List<Comment> findAllByUserId(ObjectId id) {
+        return commentRepo.findAllByUserId(id);
+    }
+
     public Comment createComment(Comment comment) {
         if (
                 comment.getCommentText() == null || comment.getCommentText().isEmpty()

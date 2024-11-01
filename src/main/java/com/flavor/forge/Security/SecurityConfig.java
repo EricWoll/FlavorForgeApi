@@ -39,14 +39,46 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         authHttp -> {
+
+                            // Not Logged In
                             authHttp.requestMatchers(
-                                    HttpMethod.GET).permitAll();
+                                    HttpMethod.GET,
+                                    "/api/v1/search/**",
+                                    "/api/v1/comments",
+                                    "/api/v1/comments/**",
+                                    "/api/v1/users/**",
+                                    "/api/v1/recipes/**"
+                            ).permitAll();
                             authHttp.requestMatchers(
-                                    HttpMethod.PUT).permitAll();
+                                    HttpMethod.POST,
+                                    "/api/v1/auth/login",
+                                    "/api/v1/auth/register"
+                            ).permitAll();
+
+                            // Logged In
                             authHttp.requestMatchers(
-                                    HttpMethod.POST).permitAll();
+                                    HttpMethod.GET,
+                                    "/api/v1/auth/refresh"
+                            ).hasRole(ERole.FREE.getRole());
                             authHttp.requestMatchers(
-                                    HttpMethod.DELETE).permitAll();
+                                    HttpMethod.PUT,
+                                    "/api/v1/comments/**",
+                                    "/api/v1/recipes/**",
+                                    "/api/v1/users/**"
+                            ).hasRole(ERole.FREE.getRole());
+                            authHttp.requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/v1/auth/refresh",
+                                    "/api/v1/comments/**",
+                                    "/api/v1/recipes/**",
+                                    "/api/v1/users/**"
+                            ).hasRole(ERole.FREE.getRole());
+                            authHttp.requestMatchers(
+                                    HttpMethod.DELETE,
+                                    "/api/v1/comments/**",
+                                    "/api/v1/recipes/**",
+                                    "/api/v1/users/**"
+                            ).hasRole(ERole.FREE.getRole());
                         }
                 )
                 .httpBasic(Customizer.withDefaults())
