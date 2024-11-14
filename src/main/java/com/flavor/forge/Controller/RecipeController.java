@@ -18,15 +18,15 @@ public class RecipeController {
     private RecipeService recipeService;
 
     @GetMapping("/{recipe_id}")
-    public ResponseEntity<Recipe> findSingleRecipe(@PathVariable ObjectId recipe_id) {
+    public ResponseEntity<Recipe> findSingleRecipe(@PathVariable String recipe_id) {
         return new ResponseEntity<Recipe>(
                 recipeService.findOneById(recipe_id),
                 HttpStatus.OK
         );
     }
 
-    @GetMapping("/{user_id}")
-    public ResponseEntity<List<Recipe>> findAllRecipesByUserId(@PathVariable ObjectId user_id) {
+    @GetMapping("users/{user_id}")
+    public ResponseEntity<List<Recipe>> findAllRecipesByUserId(@PathVariable String user_id) {
         return new ResponseEntity<List<Recipe>>(
                 recipeService.findAllByUserId(user_id),
                 HttpStatus.OK
@@ -43,7 +43,7 @@ public class RecipeController {
 
     @PutMapping("/{recipe_id}")
     public ResponseEntity<Recipe> updateRecipe(
-            @PathVariable ObjectId recipe_id,
+            @PathVariable String recipe_id,
             @RequestBody Recipe payload
     ) {
         return new ResponseEntity<Recipe>(
@@ -53,7 +53,7 @@ public class RecipeController {
     }
 
     @DeleteMapping("/{recipe_id}")
-    public ResponseEntity<Recipe> deleteRecipe(@PathVariable ObjectId recipe_id) {
+    public ResponseEntity<Recipe> deleteRecipe(@PathVariable String recipe_id) {
         return new ResponseEntity<Recipe>(
                 recipeService.deleteRecipeById(recipe_id),
                 HttpStatus.NO_CONTENT

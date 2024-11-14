@@ -20,19 +20,19 @@ public class CommentService {
     @Autowired
     private CommentRepo commentRepo;
 
-    public Comment findOneById(ObjectId id) {
-        return commentRepo.findById(id)
+    public Comment findOneById(String id) {
+        return commentRepo.findByCommentId(id)
                 .orElseThrow(() -> {
                     logger.error("No comment found with id of: {}", id);
                     return new CommentNotFoundException("Comment Not Found for Id: " + id);
                 });
     }
 
-    public List<Comment> findAllByAttachedId(ObjectId id) {
+    public List<Comment> findAllByAttachedId(String id) {
         return commentRepo.findAllByAttachedId(id);
     }
 
-    public List<Comment> findAllByUserId(ObjectId id) {
+    public List<Comment> findAllByUserId(String id) {
         return commentRepo.findAllByUserId(id);
     }
 
@@ -54,7 +54,7 @@ public class CommentService {
         );
     }
 
-    public Comment updateComment(ObjectId id, Comment comment) {
+    public Comment updateComment(String id, Comment comment) {
         if (
                 comment.getCommentText() == null || comment.getCommentText().isEmpty()
                         || comment.getUserId() == null || comment.getAttachedId() == null
@@ -63,7 +63,7 @@ public class CommentService {
             throw new CommentEmptyException("Comment Is Missing Some Content!!");
         }
 
-        Comment foundComment = commentRepo.findById(id)
+        Comment foundComment = commentRepo.findByCommentId(id)
                 .orElseThrow(() -> {
                     logger.error("Comment does not exists with Id of \"{}\" and cannot be updated!", id);
                     return new CommentNotFoundException("Comment Not Found With Id Of: " + id);
@@ -75,14 +75,14 @@ public class CommentService {
         return foundComment;
     }
 
-    public Comment deleteCommentById(ObjectId id) {
-        Comment comment = commentRepo.findById(id)
+    public Comment deleteCommentById(String id) {
+        Comment comment = commentRepo.findByCommentId(id)
                 .orElseThrow(() -> {
                     logger.error("Comment does not exists with Id of \"{}\" and cannot be deleted!", id);
                     return new CommentNotFoundException("Comment Not Found for Id: " + id);
                 });
 
-        commentRepo.deleteById(id);
+        commentRepo.deleteByCommentId(id);
         return comment;
     }
 }

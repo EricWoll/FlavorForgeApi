@@ -1,6 +1,7 @@
 package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Model.Response.PublicUserResponse;
 import com.flavor.forge.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,8 +16,8 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/{username}")
-    public ResponseEntity<User> findSingleUser(@PathVariable String username) {
-        return new ResponseEntity<User>(
+    public ResponseEntity<PublicUserResponse> findSingleUser(@PathVariable String username) {
+        return new ResponseEntity<PublicUserResponse>(
                 userService.findOneByUsername(username),
                 HttpStatus.OK
         );
@@ -31,9 +32,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{username}")
-    public ResponseEntity<User> deleteUser(@PathVariable String username) {
+    public ResponseEntity<User> deleteUser(@PathVariable String username, @RequestBody User payload) {
         return new ResponseEntity<User>(
-                userService.deleteUser(username),
+                userService.deleteUser(payload, username),
                 HttpStatus.NO_CONTENT
         );
     }

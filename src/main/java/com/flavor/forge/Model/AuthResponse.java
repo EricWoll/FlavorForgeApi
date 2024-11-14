@@ -1,7 +1,6 @@
 package com.flavor.forge.Model;
 
 import lombok.*;
-import org.bson.types.ObjectId;
 
 @AllArgsConstructor
 @Getter
@@ -12,7 +11,7 @@ public class AuthResponse {
     private String refreshToken;
     private String username;
     private String email;
-    private ObjectId userId;
+    private String userId;
     private ERole role;
     private String imageId;
 }

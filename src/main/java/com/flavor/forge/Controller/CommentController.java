@@ -18,7 +18,7 @@ public class CommentController {
     private CommentService commentService;
 
     @GetMapping("/{comment_id}")
-    public ResponseEntity<Comment> findSingleComment(@PathVariable ObjectId comment_id) {
+    public ResponseEntity<Comment> findSingleComment(@PathVariable String comment_id) {
         return new ResponseEntity<Comment>(
                 commentService.findOneById(comment_id),
                 HttpStatus.OK
@@ -26,7 +26,7 @@ public class CommentController {
     }
 
     @GetMapping("/attached/{attached_id}")
-    public ResponseEntity<List<Comment>> findAllCommentsByAttached(@PathVariable ObjectId attached_id) {
+    public ResponseEntity<List<Comment>> findAllCommentsByAttached(@PathVariable String attached_id) {
         return new ResponseEntity<List<Comment>>(
                 commentService.findAllByAttachedId(attached_id),
                 HttpStatus.OK
@@ -34,7 +34,7 @@ public class CommentController {
     }
 
     @GetMapping("/users/{user_id}")
-    public ResponseEntity<List<Comment>> findAllCommentsByUser(@PathVariable ObjectId user_id) {
+    public ResponseEntity<List<Comment>> findAllCommentsByUser(@PathVariable String user_id) {
         return new ResponseEntity<List<Comment>>(
                 commentService.findAllByUserId(user_id),
                 HttpStatus.OK
@@ -51,7 +51,7 @@ public class CommentController {
 
     @PutMapping("/{comment_id}")
     public ResponseEntity<Comment> updateComment(
-            @PathVariable ObjectId comment_id,
+            @PathVariable String comment_id,
             @RequestBody Comment payload
     ) {
         return new ResponseEntity<Comment>(
@@ -64,7 +64,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{comment_id}")
-    public ResponseEntity<Comment> deleteComment(@PathVariable ObjectId comment_id) {
+    public ResponseEntity<Comment> deleteComment(@PathVariable String comment_id) {
         return new ResponseEntity<Comment>(
                 commentService.deleteCommentById(comment_id),
                 HttpStatus.NO_CONTENT

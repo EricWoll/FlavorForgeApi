@@ -4,6 +4,7 @@ import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.AuthResponse;
 import com.flavor.forge.Model.ERole;
+import com.flavor.forge.Model.Response.PublicUserResponse;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
@@ -32,7 +33,7 @@ public class UserService {
     @Autowired
     private JwtService jwtService;
 
-    @Value("forge.app.noImage")
+    @Value("${forge.app.noImage}")
     private String noImageId;
 
     @Autowired
@@ -40,25 +41,42 @@ public class UserService {
 
     private BCryptPasswordEncoder BcpEncoder =  new BCryptPasswordEncoder(10);
 
-    public User findOneByUsername(String username) {
-        return userRepo.findByUsername(username)
+    public PublicUserResponse findOneByUsername(String username) {
+        User foundUser = userRepo.findByUsername(username)
                 .orElseThrow(()-> {
                     logger.error("User not found with username of: {}.", username);
                     return new UserNotFoundException("User Does Not Exist!");
                 });
+
+        return PublicUserResponse.builder()
+                .userId(foundUser.getUserId())
+                .username(foundUser.getUsername())
+                .imageId(foundUser.getImageId())
+                .followerCount(foundUser.getFollowerCount())
+                .aboutText(foundUser.getAboutText())
+                .role(foundUser.getRole())
+                .build();
     }
-    public User findOneById(ObjectId userId) {
-        return userRepo.findById(userId)
+    public PublicUserResponse findOneById(String userId) {
+        User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(()-> {
                     logger.error("User not found with id of: {}.", userId);
                     return new UserNotFoundException("User Does Not Exist!");
                 });
+
+        return PublicUserResponse.builder()
+                .username(foundUser.getUsername())
+                .imageId(foundUser.getImageId())
+                .followerCount(foundUser.getFollowerCount())
+                .aboutText(foundUser.getAboutText())
+                .role(foundUser.getRole())
+                .build();
     }
 
     public AuthResponse createUser(User user) {
 
         if (userRepo.existsByUsername(user.getUsername())) {
-            logger.error("USer already exists with username of: {}.", user.getUsername());
+            logger.error("User already exists with username of: {}.", user.getUsername());
             throw new UserExistsException("Username Already Exists!");
         }
         if (userRepo.existsByEmail(user.getEmail())) {
@@ -87,6 +105,13 @@ public class UserService {
     }
 
     public User updateUser(String username, User user) {
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        user.getUsername(),
+                        user.getPassword()
+                )
+        );
+
         User foundUser = userRepo.findByUsername(username)
                 .orElseThrow(() -> {
                     logger.error("User with username of \"{}\" is missing some content and cannot be updated!", username);
@@ -103,15 +128,22 @@ public class UserService {
         return foundUser;
     }
 
-    public User deleteUser(String username) {
-        User user = userRepo.findByUsername(username)
+    public User deleteUser(User user, String username) {
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        username,
+                        user.getPassword()
+                )
+        );
+
+        User foundUser = userRepo.findByUsername(username)
                 .orElseThrow(()-> {
                     logger.error("User does not exists with username of \"{}\" and cannot be updated!", username);
                     return new UserNotFoundException("User Does Not Exist!");
                 });
 
-        userRepo.deleteByUsername(username);
-        return user;
+        userRepo.deleteByUsername(foundUser.getUsername());
+        return foundUser;
     }
 
     public AuthResponse login(User user) {
@@ -141,7 +173,7 @@ public class UserService {
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .userId(user.getId())
+                .userId(user.getUserId())
                 .role(user.getRole())
                 .imageId(user.getImageId())
                 .build();
@@ -170,7 +202,7 @@ public class UserService {
                         .refreshToken(refreshToken)
                         .username(user.getUsername())
                         .email(user.getEmail())
-                        .userId(user.getId())
+                        .userId(user.getUserId())
                         .role(user.getRole())
                         .build();
             }

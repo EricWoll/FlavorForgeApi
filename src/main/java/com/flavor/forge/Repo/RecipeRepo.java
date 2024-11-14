@@ -1,21 +1,35 @@
 package com.flavor.forge.Repo;
 
 import com.flavor.forge.Model.Recipe;
-import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface RecipeRepo extends MongoRepository<Recipe, ObjectId> {
+public interface RecipeRepo extends MongoRepository<Recipe, String> {
 
-    @Query("{RecipeName: { $regex: /?0.*/, $options: 'i'}, Ingredients: { $all: ?1 , $options: 'i' } }")
-    List<Recipe> findAllByRecipeName(String searchString, List<String> ingredients);
+    Optional<Recipe> findByRecipeId(String recipeId);
 
-    List<Recipe> findAllByUserId(ObjectId userId);
+    @Aggregation( pipeline = { "{ $sample: { size: ?0 } }" })
+    List<Recipe> defaultSearchInRecipes(int pageAmount);
+
+    @Query("{" +
+                "'recipeName': { $regex: /?0.*/, $options: 'i'}," +
+                "'ingredients.name': { $in: ?1 }" +
+            "}")
+    List<Recipe> findAllByRecipeNameAndIngredients(String searchString, List<String> ingredients);
+
+    @Query("{ 'recipeName': { $regex: /?0.*/, $options: 'i'} }")
+    List<Recipe> findAllByRecipeName(String searchString);
+
+    List<Recipe> findAllByUserId(String userId);
 
     boolean existsByRecipeName(String name);
+
+    void deleteByRecipeId(String recipeId);
 }
+

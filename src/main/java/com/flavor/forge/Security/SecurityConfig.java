@@ -43,11 +43,13 @@ public class SecurityConfig {
                             // Not Logged In
                             authHttp.requestMatchers(
                                     HttpMethod.GET,
-                                    "/api/v1/search/**",
+                                    "/api/v1/search/recipes",
+                                    "/api/v1/search/recipes/**",
                                     "/api/v1/comments",
                                     "/api/v1/comments/**",
                                     "/api/v1/users/**",
-                                    "/api/v1/recipes/**"
+                                    "/api/v1/recipes/**",
+                                    "/api/v1/images/**"
                             ).permitAll();
                             authHttp.requestMatchers(
                                     HttpMethod.POST,
@@ -64,20 +66,25 @@ public class SecurityConfig {
                                     HttpMethod.PUT,
                                     "/api/v1/comments/**",
                                     "/api/v1/recipes/**",
-                                    "/api/v1/users/**"
+                                    "/api/v1/users/**",
+                                    "/api/v1/images/**"
                             ).hasRole(ERole.FREE.getRole());
                             authHttp.requestMatchers(
                                     HttpMethod.POST,
                                     "/api/v1/auth/refresh",
                                     "/api/v1/comments/**",
+                                    "/api/v1/comments",
                                     "/api/v1/recipes/**",
-                                    "/api/v1/users/**"
+                                    "/api/v1/recipes",
+                                    "/api/v1/users/**",
+                                    "/api/v1/images/**"
                             ).hasRole(ERole.FREE.getRole());
                             authHttp.requestMatchers(
                                     HttpMethod.DELETE,
                                     "/api/v1/comments/**",
                                     "/api/v1/recipes/**",
-                                    "/api/v1/users/**"
+                                    "/api/v1/users/**",
+                                    "/api/v1/images/**"
                             ).hasRole(ERole.FREE.getRole());
                         }
                 )

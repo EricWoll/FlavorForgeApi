@@ -16,8 +16,8 @@ public class AwsController {
     @Autowired
     private AwsService awsService;
 
-    @GetMapping("/{fileName}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileName) throws IOException {
+    @GetMapping
+    public ResponseEntity<byte[]> downloadFile(@RequestParam("filename") String fileName) throws IOException {
         var fileContent= awsService.downloadFileFromS3(fileName);
         // Set appropriate headers for the file content
         HttpHeaders headers = new HttpHeaders();

@@ -10,12 +10,12 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class FollowedCreator {
 
     @MongoId
-    private ObjectId Id;
-    private ObjectId UserId;
-    private ObjectId CreatorId;
+    private ObjectId id;
+    private String userId;
+    private String creatorId;
 
-    public FollowedCreator(ObjectId userId, ObjectId creatorId) {
-        UserId = userId;
-        CreatorId = creatorId;
+    public FollowedCreator(String userId, String creatorId) {
+        this.userId = userId;
+        this.creatorId = creatorId;
     }
 }

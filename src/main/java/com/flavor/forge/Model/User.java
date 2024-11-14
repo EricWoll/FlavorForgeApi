@@ -8,20 +8,22 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @Data
 @Document(collection = "user")
 public class User implements UserDetails {
 
     @MongoId
-    private ObjectId Id;
-    private String Username;
-    private String Email;
-    private String Password;
-    private String ImageId;
-    private int FollowerCount;
-    private String AboutText;
-    private ERole Role;
+    private ObjectId id;
+    private String userId;
+    private String username;
+    private String email;
+    private String password;
+    private String imageId;
+    private int followerCount;
+    private String aboutText;
+    private ERole role;
 
     public User(
             String username,
@@ -32,25 +34,26 @@ public class User implements UserDetails {
             String aboutText,
             ERole role
     ) {
-        this.Username = username;
-        this.Email = email;
-        this.Password = password;
-        this.ImageId = imageId;
-        this.FollowerCount = followerCount;
-        this.AboutText = aboutText;
-        this.Role = role;
+        this.userId = UUID.randomUUID().toString();
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.imageId = imageId;
+        this.followerCount = followerCount;
+        this.aboutText = aboutText;
+        this.role = role;
     }
 
     public void addFollower() {
-        FollowerCount++;
+        this.followerCount++;
     }
 
     public void removeFollower() {
-        FollowerCount--;
+        this.followerCount--;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Role.getAuthorities();
+        return this.role.getAuthorities();
     }
 }

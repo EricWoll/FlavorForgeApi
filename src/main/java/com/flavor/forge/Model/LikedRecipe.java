@@ -5,17 +5,19 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.util.UUID;
+
 @Data
 @Document(collection = "liked_recipe")
 public class LikedRecipe {
 
     @MongoId
-    private ObjectId Id;
-    private ObjectId UserId;
-    private ObjectId RecipeId;
+    private ObjectId id;
+    private String userId;
+    private String recipeId;
 
-    public LikedRecipe(ObjectId userId, ObjectId recipeId) {
-        UserId = userId;
-        RecipeId = recipeId;
+    public LikedRecipe(String userId, String recipeId) {
+        this.userId = userId;
+        this.recipeId = recipeId;
     }
 }
