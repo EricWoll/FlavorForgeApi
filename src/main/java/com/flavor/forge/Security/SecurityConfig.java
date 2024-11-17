@@ -61,7 +61,8 @@ public class SecurityConfig {
                             // Logged In
                             authHttp.requestMatchers(
                                     HttpMethod.GET,
-                                    "/api/v1/auth/refresh"
+                                    "/api/v1/auth/refresh",
+                                    "/api/v1/users/edit/**"
                             ).hasRole(ERole.FREE.getRole());
                             authHttp.requestMatchers(
                                     HttpMethod.PUT,

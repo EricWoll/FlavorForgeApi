@@ -57,6 +57,15 @@ public class UserService {
                 .role(foundUser.getRole())
                 .build();
     }
+
+    public User findOneByUsernameToEdit(String username) {
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.error("User not found with username of: {}.", username);
+                    return new UserNotFoundException("User Does Not Exist!");
+                });
+    }
+
     public PublicUserResponse findOneById(String userId) {
         User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(()-> {

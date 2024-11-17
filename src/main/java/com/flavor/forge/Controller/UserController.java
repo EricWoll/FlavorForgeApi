@@ -23,6 +23,14 @@ public class UserController {
         );
     }
 
+    @GetMapping("/edit/{username}")
+    public ResponseEntity<User> findSingleUserToEdit(@PathVariable String username) {
+        return new ResponseEntity<User>(
+                userService.findOneByUsernameToEdit(username),
+                HttpStatus.OK
+        );
+    }
+
     @PutMapping("/{username}")
     public ResponseEntity<User> updateUser (@PathVariable String username, @RequestBody User payload) {
         return new ResponseEntity<User>(
