@@ -9,7 +9,6 @@ import com.flavor.forge.Model.User;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,13 +113,6 @@ public class UserService {
     }
 
     public User updateUser(String username, User user) {
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        user.getUsername(),
-                        user.getPassword()
-                )
-        );
-
         User foundUser = userRepo.findByUsername(username)
                 .orElseThrow(() -> {
                     logger.error("User with username of \"{}\" is missing some content and cannot be updated!", username);
@@ -129,7 +121,6 @@ public class UserService {
 
         foundUser.setUsername(user.getUsername());
         foundUser.setEmail(user.getEmail());
-        foundUser.setPassword(BcpEncoder.encode(user.getPassword()));
         foundUser.setImageId(user.getImageId());
         foundUser.setAboutText(user.getAboutText());
 
