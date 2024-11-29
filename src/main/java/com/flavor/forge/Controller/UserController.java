@@ -23,6 +23,14 @@ public class UserController {
         );
     }
 
+    @GetMapping("/id/{user_id}")
+    public ResponseEntity<PublicUserResponse> findSingleUserById(@PathVariable String user_id) {
+        return new ResponseEntity<PublicUserResponse>(
+                userService.findOneById(user_id),
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/edit/{username}")
     public ResponseEntity<User> findSingleUserToEdit(@PathVariable String username) {
         return new ResponseEntity<User>(

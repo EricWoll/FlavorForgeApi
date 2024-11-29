@@ -1,5 +1,8 @@
 package com.flavor.forge.AWS;
 
+import com.flavor.forge.Service.RecipeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class AwsService {
@@ -20,30 +24,62 @@ public class AwsService {
     @Value("${aws.s3.bucket-name}")
     private String bucketName; // bucket name -> we can also make this not a service and a regular class that takes in client and bucket name in ctor
 
+    @Value("${forge.app.noImage}")
+    private String emptyImage;
+
+    private Logger logger = LoggerFactory.getLogger(RecipeService.class);
+
     public List<S3Object> listObjects() {
         ListObjectsV2Response response = s3Client.listObjectsV2(builder -> builder.bucket(bucketName));
         return response.contents();
     }
 
-    public void uploadFileToS3(String key, MultipartFile file) throws IOException {
+    public boolean doesFileExist(String bucketName, String objectKey) {
+        try {
+            GetObjectAttributesRequest request = GetObjectAttributesRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
+    }
+
+
+    public void uploadFileToS3(MultipartFile file, String objectKey, String newObjectKey, Boolean updateFile) throws IOException {
+        if (!Objects.equals(objectKey, emptyImage)) {
+            if (updateFile && doesFileExist(bucketName, objectKey)) {
+                deleteFileFromS3(objectKey);
+            }
+        }
+
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(key)
+                .key(newObjectKey)
                 .build();
 
         // Upload file to S3
-        PutObjectResponse response = s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-        // Handle response or perform other operations
-    }
-    public void deleteFileFromS3(String key) {
-        DeleteObjectRequest request = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .build();
+        try {
+            s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        } catch (Exception e) {
+            logger.error("There was an Error with uploading the Image File!");
+        }
 
-        // Delete file from S3
-        DeleteObjectResponse response = s3Client.deleteObject(request);
-        // Handle response or perform other operations
+
+    }
+
+    public boolean deleteFileFromS3(String objectKey) {
+        if (doesFileExist(bucketName, objectKey)) {
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+            s3Client.deleteObject(deleteRequest);
+            return true;
+        }
+        return false;
     }
 
     public byte[] downloadFileFromS3(String key) throws IOException {

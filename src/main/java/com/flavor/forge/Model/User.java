@@ -1,5 +1,6 @@
 package com.flavor.forge.Model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -53,6 +54,7 @@ public class User implements UserDetails {
     }
 
     @Override
+    @JsonDeserialize(contentUsing = GrantedAuthorityDeserializer.class)
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.role.getAuthorities();
     }

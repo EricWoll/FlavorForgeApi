@@ -5,8 +5,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import java.util.UUID;
-
 @Data
 @Document(collection = "liked_recipe")
 public class LikedRecipe {

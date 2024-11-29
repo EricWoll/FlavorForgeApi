@@ -28,9 +28,28 @@ public class AwsController {
     }
 
     @PostMapping
-    public ResponseEntity<?> uploadFile(@RequestParam("image") MultipartFile file, @RequestParam("file_name") String key) throws IOException {
-        awsService.uploadFileToS3(key, file);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<?> uploadFile(
+            @RequestParam("image") MultipartFile file,
+            @RequestParam("objectKey") String objectKey,
+            @RequestParam("newObjectKey") String newObjectKey,
+            @RequestParam("updateFile") Boolean updateFile
+    ) {
+        try {
+            // Validate file type or size if needed
+            if (file.isEmpty()) {
+                return new ResponseEntity<>("No file uploaded", HttpStatus.BAD_REQUEST);
+            }
+
+            // Upload the file to S3
+            awsService.uploadFileToS3(file, objectKey, newObjectKey, updateFile);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Successful upload
+
+        } catch (IOException e) {
+            return new ResponseEntity<>("File upload failed", HttpStatus.INTERNAL_SERVER_ERROR); // Server error
+
+        } catch (Exception e) {
+            return new ResponseEntity<>("Unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping("/{fileName}")

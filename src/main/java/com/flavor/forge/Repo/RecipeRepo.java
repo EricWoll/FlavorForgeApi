@@ -23,9 +23,13 @@ public interface RecipeRepo extends MongoRepository<Recipe, String> {
             "}")
     List<Recipe> findAllByRecipeNameAndIngredients(String searchString, List<String> ingredients);
 
+    @Query("{ 'userId': ?0, 'recipeName': { $regex: /?1.*/, $options: 'i'} }")
+    List<Recipe> findAllByUserIdAndSearchString(String userId, String searchString);
+
     @Query("{ 'recipeName': { $regex: /?0.*/, $options: 'i'} }")
     List<Recipe> findAllByRecipeName(String searchString);
 
+    @Query("{ 'userId': ?0 }")
     List<Recipe> findAllByUserId(String userId);
 
     boolean existsByRecipeName(String name);

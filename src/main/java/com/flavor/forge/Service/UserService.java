@@ -93,7 +93,6 @@ public class UserService {
         }
 
         if (user.getImageId() == null) {
-            logger.info("No imageId for created User, setting to empty String.");
             user.setImageId(noImageId);
         }
 

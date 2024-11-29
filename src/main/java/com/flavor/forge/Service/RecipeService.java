@@ -32,7 +32,8 @@ public class RecipeService {
     }
 
     public List<Recipe> findAllByUserId(String userId) {
-        return recipeRepo.findAllByUserId(userId);
+        List<Recipe> foundRecipes = recipeRepo.findAllByUserId(userId);
+        return foundRecipes;
     }
 
     public Recipe createRecipe(Recipe recipe) {
@@ -48,7 +49,6 @@ public class RecipeService {
         }
 
         if (recipe.getImageId() == null || recipe.getImageId().isEmpty()) {
-            logger.info("No imageId for created Recipe, setting to empty String.");
             recipe.setImageId(noImageId);
         }
 
@@ -78,17 +78,17 @@ public class RecipeService {
             throw new RecipeEmptyException("Recipe Is Missing Some Content!");
         }
 
-        Recipe foundRecipe = recipeRepo.findById(id)
+        Recipe foundRecipe = recipeRepo.findByRecipeId(id)
                 .orElseThrow(() -> {
                     logger.error("Recipe does not exists with Id of \"{}\" and cannot be updated!", id);
                     return new RecipeNotFoundException("Recipe Does Not Exists With Id Of: " + id);
                 });
 
+        foundRecipe.setImageId(recipe.getImageId());
         foundRecipe.setRecipeName(recipe.getRecipeName());
         foundRecipe.setRecipeDescription(recipe.getRecipeDescription());
         foundRecipe.setIngredients(recipe.getIngredients());
         foundRecipe.setSteps(recipe.getSteps());
-        foundRecipe.setImageId(recipe.getImageId());
 
         recipeRepo.save(foundRecipe);
         return foundRecipe;

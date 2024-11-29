@@ -4,7 +4,6 @@ import com.flavor.forge.Exception.CustomExceptions.CommentEmptyException;
 import com.flavor.forge.Exception.CustomExceptions.CommentNotFoundException;
 import com.flavor.forge.Model.Comment;
 import com.flavor.forge.Repo.CommentRepo;
-import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

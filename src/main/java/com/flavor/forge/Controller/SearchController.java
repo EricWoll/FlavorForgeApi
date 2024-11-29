@@ -1,7 +1,6 @@
 package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.Recipe;
-import com.flavor.forge.Model.Request.ListSearchRequest;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Service.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,13 +29,21 @@ public class SearchController {
 
     @GetMapping("/recipes/{search_string}")
     public ResponseEntity<List<Recipe>> searchByStringInRecipe(
-            @PathVariable String search_string,
-            @RequestBody ListSearchRequest payload
+            @PathVariable String search_string
     ) {
         return new ResponseEntity<List<Recipe>>(
-                searchService.searchByStringInRecipe(search_string,
-                        payload
-                ),
+                searchService.searchByStringInRecipe(search_string),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/creators/recipes")
+    public ResponseEntity<List<Recipe>> searchByUserIdAndSearchString(
+            @RequestParam(value = "user_id", required = true) String user_id,
+            @RequestParam(value = "search_string" , required = true) String search_string
+    ) {
+        return new ResponseEntity<List<Recipe>>(
+                searchService.searchRecipeByUserIdAndSearchString(user_id, search_string),
                 HttpStatus.OK
         );
     }
