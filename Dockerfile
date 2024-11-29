@@ -1,8 +1,10 @@
-FROM maven:3.8.3-openjdk-17 AS build
+FROM openjdk:21-jdk-slim as build
+WORKDIR /app
 COPY . .
-RUN mvn clean package -DskipTests
+RUN ./mvnw clean package -DskipTests
 
-FROM oraclelinux:8-slim
-COPY --from=build /target/forge-0.0.1-SNAPSHOT.jar flavor-forge.jar
+FROM openjdk:21-jre-slim
+WORKDIR /app
+COPY --from=build /app/target/forge-0.0.1-SNAPSHOT.jar flavor-forge.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","flavor-forge.jar"]
