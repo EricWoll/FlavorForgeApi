@@ -47,7 +47,8 @@ public class SecurityConfig {
                                     "/api/v1/comments/**",
                                     "/api/v1/users/**",
                                     "/api/v1/recipes/**",
-                                    "/api/v1/images/**"
+                                    "/api/v1/images/**",
+                                    "/api/v1/users/creator/**"
                             ).permitAll();
                             authHttp.requestMatchers(
                                     HttpMethod.POST,
@@ -59,7 +60,8 @@ public class SecurityConfig {
                             authHttp.requestMatchers(
                                     HttpMethod.GET,
                                     "/api/v1/auth/refresh",
-                                    "/api/v1/users/edit/**"
+                                    "/api/v1/users/edit/**",
+                                    "/api/v1/recipes/followed/**"
                             ).hasRole(ERole.FREE.getRole());
                             authHttp.requestMatchers(
                                     HttpMethod.PUT,
@@ -83,7 +85,8 @@ public class SecurityConfig {
                                     "/api/v1/comments/**",
                                     "/api/v1/recipes/**",
                                     "/api/v1/users/**",
-                                    "/api/v1/images/**"
+                                    "/api/v1/images/**",
+                                    "/api/v1/recipes/followed"
                             ).hasRole(ERole.FREE.getRole());
                         }
                 )

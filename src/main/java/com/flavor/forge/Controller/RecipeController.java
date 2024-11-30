@@ -1,6 +1,8 @@
 package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.Recipe;
+import com.flavor.forge.Model.Response.RecipeWithUser;
+import com.flavor.forge.Model.Response.RecipeWithUserLoggedIn;
 import com.flavor.forge.Service.RecipeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,9 +19,22 @@ public class RecipeController {
     private RecipeService recipeService;
 
     @GetMapping("/{recipe_id}")
-    public ResponseEntity<Recipe> findSingleRecipe(@PathVariable String recipe_id) {
-        return new ResponseEntity<Recipe>(
-                recipeService.findOneById(recipe_id),
+    public ResponseEntity<RecipeWithUser> findSingleRecipe(
+            @PathVariable String recipe_id
+    ) {
+        return new ResponseEntity<RecipeWithUser>(
+                recipeService.findRecipeWithUser(recipe_id),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/followed/{recipe_id}")
+    public ResponseEntity<RecipeWithUserLoggedIn> findSingleRecipeLoggedIn(
+            @PathVariable String recipe_id,
+            @RequestParam("user_id") String user_id
+    ) {
+        return new ResponseEntity<RecipeWithUserLoggedIn>(
+                recipeService.findRecipeWithUserLoggedIn(recipe_id, user_id),
                 HttpStatus.OK
         );
     }

@@ -1,6 +1,7 @@
 package com.flavor.forge.Model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.flavor.forge.Model.Response.PublicUserResponse;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;

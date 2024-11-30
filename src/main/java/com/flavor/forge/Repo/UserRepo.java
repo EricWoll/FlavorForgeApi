@@ -19,6 +19,7 @@ public interface UserRepo extends MongoRepository<User, String> {
     @Query("{Username: { $regex: /?0.*/, $options: 'i' }")
     List<User> findAllByUsername(String searchString);
 
+    boolean existsByUserId(String userId);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 

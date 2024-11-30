@@ -4,15 +4,24 @@ import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.AuthResponse;
 import com.flavor.forge.Model.ERole;
+import com.flavor.forge.Model.FollowedCreator;
+import com.flavor.forge.Model.Response.FollowedCreatorResponse;
+import com.flavor.forge.Model.Response.PublicCreatorResponse;
 import com.flavor.forge.Model.Response.PublicUserResponse;
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Repo.FollowedCreatorRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
+import com.mongodb.client.result.DeleteResult;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,6 +29,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -31,6 +43,12 @@ public class UserService {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private FollowedCreatorRepo followedRepo;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Value("${forge.app.noImage}")
     private String noImageId;
@@ -79,6 +97,100 @@ public class UserService {
                 .aboutText(foundUser.getAboutText())
                 .role(foundUser.getRole())
                 .build();
+    }
+
+    // Don't know if this is needed. Leaving for now.
+    public Boolean isCreatorFollowed(String userId, String creatorId) {
+        Criteria criteria = Criteria.where("userId").is(userId)
+                .and("creatorId").is(creatorId);
+
+        Query query = new Query(criteria);
+
+        return mongoTemplate.exists(query, "followed_creator");
+    }
+
+    public List<FollowedCreatorResponse> findFollowedCreatorsByUserId(String userId) {
+        MatchOperation matchOperation = Aggregation.match(Criteria.where("userId").is(userId));
+
+        LookupOperation lookupOperation = Aggregation.lookup(
+                "user",
+                "creatorId",
+                "userId",
+                "creator"
+        );
+
+        UnwindOperation unwindOperation = Aggregation.unwind("creator");
+
+        // Includes specific fields
+        ProjectionOperation projectionOperation = Aggregation.project()
+                .andInclude("creator.userId", "creatorId")
+                .and("creator.username").as("creatorUsername")
+                .and("creator.imageId").as("creatorImage");
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                matchOperation,
+                lookupOperation,
+                unwindOperation,
+                projectionOperation
+        );
+
+        return mongoTemplate.aggregate(aggregation, "followed_creator", FollowedCreatorResponse.class).getMappedResults();
+    }
+
+
+    public FollowedCreator createFollowedCreator(String userId, String creatorId) {
+        if (!userRepo.existsByUserId(userId)) {
+            logger.error("User does not exist with userId of: {}.", userId);
+            throw new UserNotFoundException("User Does Not Exist!");
+        }
+
+        if (!userRepo.existsByUserId(creatorId)) {
+            logger.error("Creator User does not exist with userId of: {}.", creatorId);
+            throw new UserNotFoundException("Creator User Does Not Exist!");
+        }
+
+        return followedRepo.insert(
+                new FollowedCreator(
+                        userId,
+                        creatorId
+                )
+        );
+    }
+
+    public PublicCreatorResponse findCreatorAndIsFollowed(String userId, String creatorId) {
+        boolean isFollowed = isFollowing(userId, creatorId);
+
+        logger.info("{}", isFollowed);
+
+        PublicUserResponse user = findOneById(creatorId);
+
+        return PublicCreatorResponse.builder()
+                .creatorId(creatorId)
+                .creatorUsername(user.getUsername())
+                .creatorImageId(user.getImageId())
+                .followerCount(user.getFollowerCount())
+                .creatorAboutText(user.getAboutText())
+                .creatorRole(user.getRole())
+                .isFollowed(isFollowed)
+                .build();
+    }
+
+    public DeleteResult deleteFollowedCreator(String userId, String creatorId) {
+        if (!userRepo.existsByUserId(userId)) {
+            logger.error("User does not exist with userId of: {}.", userId);
+            throw new UserNotFoundException("User Does Not Exist!");
+        }
+
+        if (!userRepo.existsByUserId(creatorId)) {
+            logger.error("Creator User does not exist with userId of: {}.", creatorId);
+            throw new UserNotFoundException("Creator User Does Not Exist!");
+        }
+
+        Criteria criteria = Criteria.where("userId").is(userId)
+                .and("creatorId").is(creatorId);
+
+        Query query = new Query(criteria);
+        return mongoTemplate.remove(query, "followed_creator");
     }
 
     public AuthResponse createUser(User user) {
@@ -207,5 +319,10 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    public boolean isFollowing(String currentUserId, String creatorId) {
+        Optional<FollowedCreator> follow = followedRepo.findByUserIdAndCreatorId(currentUserId, creatorId);
+        return follow.isPresent();
     }
 }
