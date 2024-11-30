@@ -91,6 +91,7 @@ public class UserService {
                 });
 
         return PublicUserResponse.builder()
+                .userId(foundUser.getUserId())
                 .username(foundUser.getUsername())
                 .imageId(foundUser.getImageId())
                 .followerCount(foundUser.getFollowerCount())
@@ -159,8 +160,6 @@ public class UserService {
 
     public PublicCreatorResponse findCreatorAndIsFollowed(String userId, String creatorId) {
         boolean isFollowed = isFollowing(userId, creatorId);
-
-        logger.info("{}", isFollowed);
 
         PublicUserResponse user = findOneById(creatorId);
 
