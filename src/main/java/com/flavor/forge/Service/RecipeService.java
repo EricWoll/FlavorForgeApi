@@ -50,7 +50,7 @@ public class RecipeService {
         MatchOperation matchOperation = Aggregation.match(Criteria.where("recipeId").is(recipeId));
         LookupOperation userLookupOperation = Aggregation.lookup(
                 "user",
-                "userId",
+                "creatorId",
                 "userId",
                 "creator"
         );
@@ -96,7 +96,7 @@ public class RecipeService {
         );
 
         // Step 2: Fetch the user who created the recipe
-        String creatorId = recipe.getUserId();
+        String creatorId = recipe.getCreatorId();
         User creator = userRepo.findByUserId(creatorId).orElseThrow(
                 () -> new UserNotFoundException("User not found")
         );
@@ -120,8 +120,8 @@ public class RecipeService {
     }
 
 
-    public List<Recipe> findAllByUserId(String userId) {
-        return recipeRepo.findAllByUserId(userId);
+    public List<Recipe> findAllByUserId(String creatorId) {
+        return recipeRepo.findAllByCreatorId(creatorId);
     }
 
     public Recipe createRecipe(Recipe recipe) {
@@ -129,7 +129,7 @@ public class RecipeService {
         if (
                 (recipe.getRecipeName() == null || recipe.getRecipeName().isEmpty())
                         || ( recipe.getRecipeDescription() == null || recipe.getRecipeDescription().isEmpty())
-                        || recipe.getUserId() == null
+                        || recipe.getCreatorId() == null
                         || ( recipe.getIngredients() == null || recipe.getIngredients().isEmpty() )
         ){
             logger.error("Recipe is missing some content and cannot be created!");
@@ -142,7 +142,7 @@ public class RecipeService {
 
         return recipeRepo.insert(
                 new Recipe(
-                        recipe.getUserId(),
+                        recipe.getCreatorId(),
                         recipe.getRecipeName(),
                         recipe.getRecipeDescription(),
                         recipe.getIngredients(),
@@ -154,14 +154,14 @@ public class RecipeService {
     }
 
     public Recipe updateRecipe(String id, Recipe recipe) {
-
         if (
                 (recipe.getRecipeName() == null || recipe.getRecipeName().isEmpty())
                         || ( recipe.getRecipeDescription() == null || recipe.getRecipeDescription().isEmpty())
-                        || recipe.getUserId() == null
+                        || recipe.getCreatorId() == null
                         || (recipe.getIngredients() == null || recipe.getIngredients().isEmpty())
                         || (recipe.getSteps() == null || recipe.getSteps().isEmpty())
         ){
+
             logger.error("Recipe with Id of \"{}\" is missing some content and cannot be updated!", id);
             throw new RecipeEmptyException("Recipe Is Missing Some Content!");
         }

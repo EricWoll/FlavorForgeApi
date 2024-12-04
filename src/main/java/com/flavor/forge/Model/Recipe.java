@@ -15,7 +15,7 @@ public class Recipe {
     @MongoId
     private ObjectId id;
     private String recipeId;
-    private String userId;
+    private String creatorId;
     private String recipeName;
     private String recipeDescription;
     private List<Object> ingredients;
@@ -23,9 +23,9 @@ public class Recipe {
     private String imageId;
     private int likesCount;
 
-    public Recipe(String userId, String recipeName, String recipeDescription, List<Object> ingredients, List<String> steps, String imageId, int likesCount) {
+    public Recipe(String creatorId, String recipeName, String recipeDescription, List<Object> ingredients, List<String> steps, String imageId, int likesCount) {
         this.recipeId = UUID.randomUUID().toString();
-        this.userId = userId;
+        this.creatorId = creatorId;
         this.recipeName = recipeName;
         this.recipeDescription = recipeDescription;
         this.ingredients = ingredients;
