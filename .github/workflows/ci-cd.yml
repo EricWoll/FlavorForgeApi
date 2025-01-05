@@ -71,11 +71,11 @@ jobs:
         username: ubuntu
         key: ${{ secrets.DEPLOY_KEY }}
         source: "target/*.jar"
-        target: "/home/ubuntu/deployment/"
+        target: "/home/admin/deployment/"
 
     - name: Connect SSH and Restart Services
       run: |
-        ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@ec2-54-218-20-55.us-west-2.compute.amazonaws.com '
+        ssh -o StrictHostKeyChecking=no -i $HOME/key.pem admin@ec2-44-243-221-37.us-west-2.compute.amazonaws.com '
           sudo systemctl restart flavorforge &&
           sudo systemctl restart nginx
         '
