@@ -21,8 +21,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout code
@@ -31,11 +30,11 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
-        distribution: 'adoptopenjdk'
+        distribution: 'adopt'
         java-version: '21'
 
     - name: Build with Maven
-      run: mvn clean package -U
+      run: mvn clean package
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
@@ -45,7 +44,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Download artifacts
@@ -64,6 +63,10 @@ jobs:
       run: |
         echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
+        
+    - name: Create deployment directory on the server if it does not exist
+      run: |
+        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@${{ secrets.DEPLOY_HOST }} "sudo mkdir -p /home/admin/deployment"
 
     - name: List contents of deployment directory
       run: ls -l "/home/admin/deployment"
