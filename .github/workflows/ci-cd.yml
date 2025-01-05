@@ -51,29 +51,29 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: packaged-application
-        path: target/
+        path: ./artifact
 
     - name: Setup key
       id: setup-key
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
       run: |
-        echo "$DEPLOY_KEY" >> $HOME/key.pem
+        echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
 
     - name: Copy JAR to EC2
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
-        source: "target/*.jar"
+        source: "artifact/*.jar"
         target: "home/admin/deployment/"
 
     - name: Connect SSH and Restart Services
       run: |
-        ssh -o StrictHostKeyChecking=no -i $HOME/key.pem admin@ec2-44-243-221-37.us-west-2.compute.amazonaws.com '
-          sudo systemctl restart flavorforge &&
+        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@${{ secrets.DEPLOY_HOST }} << EOF
+          sudo systemctl restart flavorforge
           sudo systemctl restart nginx
-        '
+        EOF
