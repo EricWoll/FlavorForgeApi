@@ -65,7 +65,7 @@ jobs:
         chmod 400 $HOME/key.pem
 
     - name: List contents of deployment directory
-      run: ls -l "$HOME/deployment"
+      run: ls -l "/home/admin/deployment"
 
     - name: Copy Files to Server
       uses: appleboy/scp-action@v0.1.7
@@ -75,7 +75,7 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
         source: "./artifact/*.jar"
-        target: "$HOME/deployment/"
+        target: "/home/admin/deployment/"
         debug: true
 
     - name: Connect SSH and Restart Services
