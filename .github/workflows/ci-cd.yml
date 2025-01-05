@@ -68,16 +68,16 @@ jobs:
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.DEPLOY_HOST }}
-        username: admin
+        username: ubuntu
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
         source: "./artifact/*.jar"
-        target: "/home/admin/deployment/"
+        target: "/home/ubuntu/deployment/"
         debug: true
 
     - name: Connect SSH and Restart Services
       run: |
-        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@${{ secrets.DEPLOY_HOST }} << EOF
+        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << EOF
           sudo systemctl restart flavorforge
           sudo systemctl restart nginx
         EOF
