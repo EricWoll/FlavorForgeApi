@@ -53,7 +53,7 @@ jobs:
         name: packaged-application
         path: "./artifact"
 
-    - name: Check artifact files
+    - name: Verify artifact files
       run: ls -l ./artifact/*.jar
 
     - name: Setup key
@@ -63,6 +63,9 @@ jobs:
       run: |
         echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
+
+    - name: List contents of artifact directory
+      run: ls -l ./artifact/
 
     - name: Copy Files to Server
       uses: appleboy/scp-action@v0.1.7
