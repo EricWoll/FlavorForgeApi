@@ -67,6 +67,7 @@ jobs:
         host: ${{ secrets.DEPLOY_HOST }}
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
+        port: 22
         source: "target/*.jar"
         target: "home/admin/deployment/"
 
