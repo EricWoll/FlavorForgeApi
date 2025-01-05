@@ -66,7 +66,7 @@ jobs:
         
     - name: Create deployment directory on the server if it does not exist
       run: |
-        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i .\FlavorKey.pem admin@ec2-44-243-221-37.us-west-2.compute.amazonaws.com "/bin/mkdir -p /home/admin/deployment"
+        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@ec2-44-243-221-37.us-west-2.compute.amazonaws.com "/bin/mkdir -p /home/admin/deployment"
 
     - name: List contents of deployment directory
       run: ls -l "/home/admin/deployment"
