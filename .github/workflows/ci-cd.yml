@@ -57,7 +57,6 @@ jobs:
       id: setup-key
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-        
       run: |
         echo "$DEPLOY_KEY" >> $HOME/key.pem
         chmod 400 $HOME/key.pem
