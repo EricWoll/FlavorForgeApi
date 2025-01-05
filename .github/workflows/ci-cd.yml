@@ -61,11 +61,11 @@ jobs:
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
       run: |
-        echo "$DEPLOY_KEY" > /home/admin/key.pem
-        chmod 400 /home/admin/key.pem
+        echo "$DEPLOY_KEY" > $HOME/key.pem
+        chmod 400 $HOME/key.pem
 
     - name: List contents of deployment directory
-      run: ls -l "/home/admin/deployment"
+      run: ls -l "$HOME/deployment"
 
     - name: Copy Files to Server
       uses: appleboy/scp-action@v0.1.7
@@ -75,12 +75,12 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
         source: "./artifact/*.jar"
-        target: "/home/admin/deployment/"
+        target: "$HOME/deployment/"
         debug: true
 
     - name: Connect SSH and Restart Services
       run: |
-        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i /home/admin/key.pem admin@${{ secrets.DEPLOY_HOST }} << EOF
+        ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@${{ secrets.DEPLOY_HOST }} << EOF
           sudo systemctl restart flavorforge
           sudo systemctl restart nginx
         EOF
