@@ -61,15 +61,16 @@ jobs:
         echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
 
-    - name: Copy JAR to EC2
-      uses: appleboy/scp-action@v0.1.7
+    - name: Copy Files to Server
+      uses: appleboy/scp-action@v1.6.14
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
-        source: "artifact/*.jar"
-        target: "home/admin/deployment/"
+        source: "target/*.jar"
+        target: "/home/admin/deployment/"
+        debug: true
 
     - name: Connect SSH and Restart Services
       run: |
