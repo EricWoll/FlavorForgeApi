@@ -51,10 +51,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: packaged-application
-        path: ./artifact
+        path: "./target
 
     - name: Check artifact files
-      run: ls -l ./artifact
+      run: ls -l ./target
 
     - name: Setup key
       id: setup-key
