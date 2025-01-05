@@ -53,6 +53,9 @@ jobs:
         name: packaged-application
         path: ./artifact
 
+    - name: Check artifact files
+      run: ls -l ./artifact
+
     - name: Setup key
       id: setup-key
       env:
@@ -68,7 +71,7 @@ jobs:
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
-        source: "target/*.jar"
+        source: "./artifact/*.jar"
         target: "/home/admin/deployment/"
         debug: true
 
