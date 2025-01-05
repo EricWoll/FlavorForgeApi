@@ -68,7 +68,7 @@ jobs:
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         source: "target/*.jar"
-        target: "/home/admin/deployment/"
+        target: "$HOME/deployment/"
 
     - name: Connect SSH and Restart Services
       run: |
