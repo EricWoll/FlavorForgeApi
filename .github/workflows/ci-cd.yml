@@ -51,10 +51,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: packaged-application
-        path: "./target"
+        path: "./artifact"
 
     - name: Check artifact files
-      run: ls -l ./target
+      run: ls -l ./artifact/*.jar
 
     - name: Setup key
       id: setup-key
@@ -71,7 +71,7 @@ jobs:
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
-        source: "./target/*.jar"
+        source: "./artifact/*.jar"
         target: "/home/admin/deployment/"
         debug: true
 
