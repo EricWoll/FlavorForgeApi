@@ -62,7 +62,7 @@ jobs:
         chmod 400 $HOME/key.pem
 
     - name: Copy Files to Server
-      uses: appleboy/scp-action@v1.6.14
+      uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: admin
