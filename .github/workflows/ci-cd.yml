@@ -71,7 +71,7 @@ jobs:
         username: admin
         key: ${{ secrets.DEPLOY_KEY }}
         port: 22
-        source: "./artifact/*.jar"
+        source: "./target/*.jar"
         target: "/home/admin/deployment/"
         debug: true
 
