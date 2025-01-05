@@ -64,8 +64,8 @@ jobs:
         echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
 
-    - name: List contents of artifact directory
-      run: ls -l ./artifact/
+    - name: List contents of deployment directory
+      run: ls -l "$HOME/deployment"
 
     - name: Copy Files to Server
       uses: appleboy/scp-action@v0.1.7
