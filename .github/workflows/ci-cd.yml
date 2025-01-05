@@ -63,13 +63,13 @@ jobs:
       run: |
         echo "$DEPLOY_KEY" > $HOME/key.pem
         chmod 400 $HOME/key.pem
-
-    - name: List contents of deployment directory
-      run: ls -l "/home/admin/deployment"
-
+        
     - name: Create deployment directory on the server if it does not exist
       run: |
         ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i $HOME/key.pem admin@${{ secrets.DEPLOY_HOST }} "mkdir -p /home/admin/deployment"
+
+    - name: List contents of deployment directory
+      run: ls -l "/home/admin/deployment"
 
     - name: Copy Files to Server
       uses: appleboy/scp-action@v0.1.7
