@@ -93,10 +93,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
           # Kill any running instance of the application
-          pkill -f flavorforge.jar || true
+          pkill -f flavor-forge.jar || true
           
           # Start the application in the background
-          nohup java -jar /home/ubuntu/deployment/flavorforge.jar > /home/ubuntu/deployment/flavorforge.log 2>&1 &
+          nohup java -jar /home/ubuntu/deployment/flavor-forge.jar > /home/ubuntu/deployment/flavor-forge.log 2>&1 &
           
           # Reload nginx
           sudo systemctl reload nginx
