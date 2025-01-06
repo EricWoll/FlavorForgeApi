@@ -1,20 +1,5 @@
 name: CI/CD for Spring Boot with Maven
 
-env:
-  MONGO_DATABASE: ${{secrets.MONGO_DATABASE}}
-  MONGO_USER: ${{secrets.MONGO_USER}}
-  MONGO_PASSWORD: ${{secrets.MONGO_PASSWORD}}
-  MONGO_CLUSTER: ${{secrets.MONGO_CLUSTER}}
-  AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
-  AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
-  AWS_REGION: ${{secrets.AWS_REGION}}
-  AWS_BUCKET_NAME: ${{secrets.AWS_BUCKET_NAME}}
-  AWS_BUCKET_URL: ${{secrets.AWS_BUCKET_URL}}
-  JWT_SECRET: ${{secrets.JWT_SECRET}}
-  JWT_EXPIRATION_MS: ${{secrets.JWT_EXPIRATION_MS}}
-  JWT_REFRESH_EXPIRATION_MS: ${{secrets.JWT_REFRESH_EXPIRATION_MS}}
-  CORS_LINK: ${{secrets.CORS_LINK}}
-
 on:
   push:
     branches:
@@ -58,6 +43,20 @@ jobs:
       id: setup-key
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        MONGO_DATABASE: ${{secrets.MONGO_DATABASE}}
+        MONGO_USER: ${{secrets.MONGO_USER}}
+        MONGO_PASSWORD: ${{secrets.MONGO_PASSWORD}}
+        MONGO_CLUSTER: ${{secrets.MONGO_CLUSTER}}
+        AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
+        AWS_REGION: ${{secrets.AWS_REGION}}
+        AWS_BUCKET_NAME: ${{secrets.AWS_BUCKET_NAME}}
+        AWS_BUCKET_URL: ${{secrets.AWS_BUCKET_URL}}
+        JWT_SECRET: ${{secrets.JWT_SECRET}}
+        JWT_EXPIRATION_MS: ${{secrets.JWT_EXPIRATION_MS}}
+        JWT_REFRESH_EXPIRATION_MS: ${{secrets.JWT_REFRESH_EXPIRATION_MS}}
+        CORS_LINK: ${{secrets.CORS_LINK}}
+
       run: |
         echo "$DEPLOY_KEY" >> $HOME/key.pem
         chmod 400 $HOME/key.pem
