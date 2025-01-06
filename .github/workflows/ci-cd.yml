@@ -10,69 +10,79 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up JDK
-      uses: actions/setup-java@v2
-      with:
-        distribution: 'adopt'
-        java-version: '17'
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '21'
 
-    - name: Build with Maven
-      run: mvn clean package
+      - name: Build with Maven
+        run: mvn clean package
 
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: packaged-application
-        path: target/*.jar
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: packaged-application
+          path: target/*.jar
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: packaged-application
-        path: target/
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: packaged-application
+          path: target/
 
-    - name: Setup key
-      id: setup-key
-      env:
-        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-        MONGO_DATABASE: ${{secrets.MONGO_DATABASE}}
-        MONGO_USER: ${{secrets.MONGO_USER}}
-        MONGO_PASSWORD: ${{secrets.MONGO_PASSWORD}}
-        MONGO_CLUSTER: ${{secrets.MONGO_CLUSTER}}
-        AWS_ACCESS_KEY: ${{secrets.AWS_ACCESS_KEY}}
-        AWS_SECRET_KEY: ${{secrets.AWS_SECRET_KEY}}
-        AWS_REGION: ${{secrets.AWS_REGION}}
-        AWS_BUCKET_NAME: ${{secrets.AWS_BUCKET_NAME}}
-        AWS_BUCKET_URL: ${{secrets.AWS_BUCKET_URL}}
-        JWT_SECRET: ${{secrets.JWT_SECRET}}
-        JWT_EXPIRATION_MS: ${{secrets.JWT_EXPIRATION_MS}}
-        JWT_REFRESH_EXPIRATION_MS: ${{secrets.JWT_REFRESH_EXPIRATION_MS}}
-        CORS_LINK: ${{secrets.CORS_LINK}}
+      - name: Setup SSH Key
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          echo "$DEPLOY_KEY" > $HOME/key.pem
+          chmod 400 $HOME/key.pem
 
-      run: |
-        echo "$DEPLOY_KEY" >> $HOME/key.pem
-        chmod 400 $HOME/key.pem
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "target/*.jar"
+          target: "/home/ubuntu/deployment/flavor-forge.jar"
 
-    - name: Copy JAR to EC2
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.DEPLOY_HOST }}
-        username: ubuntu
-        key: ${{ secrets.DEPLOY_KEY }}
-        source: "target/*.jar"
-        target: "/home/ubuntu/deployment/"
+      - name: Persist Environment Variables on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          echo "MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}" | sudo tee -a /etc/environment
+          echo "MONGO_USER=${{ secrets.MONGO_USER }}" | sudo tee -a /etc/environment
+          echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" | sudo tee -a /etc/environment
+          echo "MONGO_CLUSTER=${{ secrets.MONGO_CLUSTER }}" | sudo tee -a /etc/environment
+          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" | sudo tee -a /etc/environment
+          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" | sudo tee -a /etc/environment
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" | sudo tee -a /etc/environment
+          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" | sudo tee -a /etc/environment
+          echo "AWS_BUCKET_URL=${{ secrets.AWS_BUCKET_URL }}" | sudo tee -a /etc/environment
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a /etc/environment
+          echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" | sudo tee -a /etc/environment
+          echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" | sudo tee -a /etc/environment
+          echo "CORS_LINK=${{ secrets.CORS_LINK }}" | sudo tee -a /etc/environment
+          source /etc/environment
+          EOF
 
-    - name: Connect SSH and Restart Services
-      run: |
-        ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} '
-          sudo systemctl restart flavorforge &&
-          sudo systemctl restart nginx
-        '
+      - name: Restart Application
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          # Kill any running instance of the application
+          pkill -f flavorforge.jar || true
+          
+          # Start the application in the background
+          nohup java -jar /home/ubuntu/deployment/flavorforge.jar > /home/ubuntu/deployment/flavorforge.log 2>&1 &
+          
+          # Reload nginx
+          sudo systemctl reload nginx
+          EOF
