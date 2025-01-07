@@ -68,7 +68,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.DEPLOY_KEY }}
           source: "target/*.jar"
-          target: "/home/ubuntu/deployment/flavor-forge.jar"
+          target: "/home/ubuntu/deployment/"
 
       - name: Persist Environment Variables on EC2
         run: |
