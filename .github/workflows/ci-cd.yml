@@ -22,7 +22,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -45,7 +45,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Download artifacts
@@ -69,6 +69,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
           pkill -f flavor-forge.jar || true
+          # Wait a moment to ensure process is stopped
+          sleep 5
           EOF
 
       - name: Copy JAR to EC2
@@ -83,28 +85,43 @@ jobs:
       - name: Persist Environment Variables on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
-          
           # Create or overwrite the .env file
-          cat <<EOT > /home/ubuntu/deployment/.env
-          MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}
-          MONGO_USER=${{ secrets.MONGO_USER }}
-          MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
-          MONGO_CLUSTER=${{ secrets.MONGO_CLUSTER }}
-          AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
-          AWS_REGION=${{ secrets.AWS_REGION }}
-          AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
-          AWS_BUCKET_URL=${{ secrets.AWS_BUCKET_URL }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}
-          JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}
-          CORS_LINK=${{ secrets.CORS_LINK }}
-          EOT
+          echo "MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}" > /home/ubuntu/deployment/.env
+          echo "MONGO_USER=${{ secrets.MONGO_USER }}" >> /home/ubuntu/deployment/.env
+          echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> /home/ubuntu/deployment/.env
+          echo "MONGO_CLUSTER=${{ secrets.MONGO_CLUSTER }}" >> /home/ubuntu/deployment/.env
+          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> /home/ubuntu/deployment/.env
+          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> /home/ubuntu/deployment/.env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> /home/ubuntu/deployment/.env
+          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> /home/ubuntu/deployment/.env
+          echo "AWS_BUCKET_URL=${{ secrets.AWS_BUCKET_URL }}" >> /home/ubuntu/deployment/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/ubuntu/deployment/.env
+          echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" >> /home/ubuntu/deployment/.env
+          echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" >> /home/ubuntu/deployment/.env
+          echo "CORS_LINK=${{ secrets.CORS_LINK }}" >> /home/ubuntu/deployment/.env
+          
+          # Check if the .env file exists and its contents
+          if [ -f /home/ubuntu/deployment/.env ]; then
+            echo ".env file created successfully."
+            cat /home/ubuntu/deployment/.env
+          else
+            echo "Error: .env file was not created." >&2
+            exit 1
+          fi
           EOF
 
       - name: Restart Application
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          
+          # Check if the log directory exists, if not, create it
+          LOG_DIR="/home/ubuntu/deployment/logs"
+          if [ ! -d "$LOG_DIR" ]; then
+            echo "Log directory does not exist. Creating it..."
+            mkdir -p "$LOG_DIR"
+          else
+            echo "Logs directory already exists."
+          fi
           
           # Export environment variables from .env
           export $(cat /home/ubuntu/deployment/.env | xargs)
@@ -116,5 +133,6 @@ jobs:
           nohup java -jar /home/ubuntu/deployment/flavor-forge.jar > /home/ubuntu/deployment/logs/flavor-forge_$TIMESTAMP.log 2>&1 &
           
           # Reload nginx
+          sudo systemctl daemon-reload
           sudo systemctl reload nginx
           EOF
