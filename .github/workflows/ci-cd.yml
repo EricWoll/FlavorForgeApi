@@ -86,6 +86,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
           # Create or overwrite the .env file
+          touch /home/ubuntu/deployment/.env  # Ensure the .env file can be created
           echo "MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}" > /home/ubuntu/deployment/.env
           echo "MONGO_USER=${{ secrets.MONGO_USER }}" >> /home/ubuntu/deployment/.env
           echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> /home/ubuntu/deployment/.env
