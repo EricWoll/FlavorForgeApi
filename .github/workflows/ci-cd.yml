@@ -65,6 +65,12 @@ jobs:
         run: |
           mv *.jar flavor-forge.jar
 
+      - name: Kill any running Flavor Forge App instance
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          pkill -f flavor-forge.jar || true
+          EOF
+
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
         with:
@@ -77,30 +83,37 @@ jobs:
       - name: Persist Environment Variables on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
-          echo "MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}" | sudo tee -a /etc/environment
-          echo "MONGO_USER=${{ secrets.MONGO_USER }}" | sudo tee -a /etc/environment
-          echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" | sudo tee -a /etc/environment
-          echo "MONGO_CLUSTER=${{ secrets.MONGO_CLUSTER }}" | sudo tee -a /etc/environment
-          echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" | sudo tee -a /etc/environment
-          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" | sudo tee -a /etc/environment
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" | sudo tee -a /etc/environment
-          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" | sudo tee -a /etc/environment
-          echo "AWS_BUCKET_URL=${{ secrets.AWS_BUCKET_URL }}" | sudo tee -a /etc/environment
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a /etc/environment
-          echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}" | sudo tee -a /etc/environment
-          echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" | sudo tee -a /etc/environment
-          echo "CORS_LINK=${{ secrets.CORS_LINK }}" | sudo tee -a /etc/environment
-          source /etc/environment
+          
+          # Create or overwrite the .env file
+          cat <<EOT > /home/ubuntu/deployment/.env
+          MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}
+          MONGO_USER=${{ secrets.MONGO_USER }}
+          MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+          MONGO_CLUSTER=${{ secrets.MONGO_CLUSTER }}
+          AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
+          AWS_BUCKET_URL=${{ secrets.AWS_BUCKET_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}
+          JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}
+          CORS_LINK=${{ secrets.CORS_LINK }}
+          EOT
           EOF
 
       - name: Restart Application
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/key.pem ubuntu@${{ secrets.DEPLOY_HOST }} << 'EOF'
-          # Kill any running instance of the application
-          pkill -f flavor-forge.jar || true
+          
+          # Export environment variables from .env
+          export $(cat /home/ubuntu/deployment/.env | xargs)
+          
+          # Generate a timestamp for the log file
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
           
           # Start the application in the background
-          nohup java -jar /home/ubuntu/deployment/flavor-forge.jar > /home/ubuntu/deployment/flavor-forge.log 2>&1 &
+          nohup java -jar /home/ubuntu/deployment/flavor-forge.jar > /home/ubuntu/deployment/logs/flavor-forge_$TIMESTAMP.log 2>&1 &
           
           # Reload nginx
           sudo systemctl reload nginx
