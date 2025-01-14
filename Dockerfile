@@ -1,7 +1,7 @@
 FROM openjdk:21-jdk-slim as build
 WORKDIR /app
-COPY src .
-RUN ./mvnw clean package -DskipTests
+COPY . .
+RUN chmod +x ./mvnw && ./mvnw clean package -DskipTests
 
 
 FROM openjdk:21-slim
