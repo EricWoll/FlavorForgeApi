@@ -20,6 +20,7 @@ public class Recipe {
 
     @ElementCollection
     @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
+    @Column(name = "ingredient")
     private List<Ingredient> ingredients;
 
     @ElementCollection
@@ -29,12 +30,20 @@ public class Recipe {
 
     private String imageId;
     private int likesCount;
+    private int viewsCount;
+    private boolean isPrivate;
 
     public void addLike() {
         this.likesCount++;
     }
-
     public void removeLike() {
         this.likesCount--;
+    }
+
+    public void addView() {
+        this.viewsCount++;
+    }
+    public void removeView() {
+        this.viewsCount--;
     }
 }

@@ -24,6 +24,9 @@ public class User implements UserDetails {
     private int followerCount;
     private String aboutText;
 
+    @Column(name="password_resetId", columnDefinition = "DEFAULT NULL", nullable = true)
+    private UUID passwordResetId;
+
     @Enumerated(EnumType.STRING)
     @Column(name="role", nullable = false)
     private ERole role;
