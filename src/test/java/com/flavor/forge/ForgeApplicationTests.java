@@ -1,9 +1,5 @@
 package com.flavor.forge;
 
-import com.flavor.forge.Service.CommentService;
-import com.flavor.forge.Service.RecipeService;
-import com.flavor.forge.Service.SearchService;
-import com.flavor.forge.Service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
