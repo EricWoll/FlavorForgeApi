@@ -1,0 +1,40 @@
+package com.flavor.forge.Model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.util.List;
+import java.util.UUID;
+
+@Data
+@Entity
+@Table(name = "recipe")
+public class Recipe {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID recipeId;
+    private UUID creatorId;
+    private String recipeName;
+    private String recipeDescription;
+
+    @ElementCollection
+    @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
+    private List<Ingredient> ingredients;
+
+    @ElementCollection
+    @CollectionTable(name = "recipe_steps", joinColumns = @JoinColumn(name = "recipe_id"))
+    @Column(name = "step")
+    private List<String> steps;
+
+    private String imageId;
+    private int likesCount;
+
+    public void addLike() {
+        this.likesCount++;
+    }
+
+    public void removeLike() {
+        this.likesCount--;
+    }
+}

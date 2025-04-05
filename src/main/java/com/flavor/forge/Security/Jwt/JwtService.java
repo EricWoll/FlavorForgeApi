@@ -1,5 +1,6 @@
 package com.flavor.forge.Security.Jwt;
 
+import com.flavor.forge.Model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
