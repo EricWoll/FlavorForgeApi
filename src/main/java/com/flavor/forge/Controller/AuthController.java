@@ -2,6 +2,7 @@ package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.AuthResponse;
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,44 +42,44 @@ public class AuthController {
             HttpServletRequest request
     ) {
         return new ResponseEntity<AuthResponse>(
-                userService.refreshJwtRoken(request),
+                userService.refreshJwToken(request),
                 HttpStatus.OK
         );
     }
 
 
-    @PostMapping("/forgot_password")
-    public ResponseEntity<Boolean> sendEmailForgottenPassword(
-            @RequestParam("user_email") String userEmail
-            ) {
-        return new ResponseEntity<Boolean>(
-                userService.generatePasswordResetIdWithEmail(userEmail),
-                HttpStatus.NO_CONTENT
-        );
-    }
+//    @PostMapping("/forgot_password")
+//    public ResponseEntity<Boolean> sendEmailForgottenPassword(
+//            @RequestParam("user_email") String userEmail
+//            ) {
+//        return new ResponseEntity<Boolean>(
+//                userService.generatePasswordResetIdWithEmail(userEmail),
+//                HttpStatus.NO_CONTENT
+//        );
+//    }
 
 
-    @PostMapping("/generate_unique_uuid/{user_id}")
-    public ResponseEntity<UUID> generateUniqueUUIDForPassword(
-        @RequestParam("user_id") UUID userId,
-        @RequestParam("user_password") String userPassword,
-        @RequestParam(value = "access_token") String accessToken
-    ) {
-        return new ResponseEntity<UUID>(
-                userService.generateUniqueId(userId, userPassword, accessToken),
-                HttpStatus.OK
-        );
-    }
+//    @PostMapping("/generate_unique_uuid/{user_id}")
+//    public ResponseEntity<UUID> generateUniqueUUIDForPassword(
+//        @RequestParam("user_id") UUID userId,
+//        @RequestParam("user_password") String userPassword,
+//        @RequestParam(value = "access_token") String accessToken
+//    ) {
+//        return new ResponseEntity<UUID>(
+//                userService.generateUniqueId(userId, userPassword, accessToken),
+//                HttpStatus.OK
+//        );
+//    }
 
 
-    @PostMapping("/update_password")
-    public  ResponseEntity<Boolean> updateUserPassword(
-            @RequestParam("unique_uuid") UUID uniqueUUID,
-            @RequestParam("new_user_password") String newUserPassword
-    ) {
-        return new ResponseEntity<Boolean>(
-                userService.updatePassword(uniqueUUID, newUserPassword),
-                HttpStatus.NO_CONTENT
-        );
-    }
+//    @PostMapping("/update_password")
+//    public  ResponseEntity<Boolean> updateUserPassword(
+//            @RequestParam("unique_uuid") UUID uniqueUUID,
+//            @RequestParam("new_user_password") String newUserPassword
+//    ) {
+//        return new ResponseEntity<Boolean>(
+//                userService.updatePassword(uniqueUUID, newUserPassword),
+//                HttpStatus.NO_CONTENT
+//        );
+//    }
 }

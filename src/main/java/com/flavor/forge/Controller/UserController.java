@@ -1,6 +1,8 @@
 package com.flavor.forge.Controller;
 
+import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,14 +31,14 @@ public class UserController {
 
 
     @GetMapping("/{user_id}/followed")
-    public ResponseEntity<List<User>> findFollowedCreators(
+    public ResponseEntity<List<FollowedCreator>> findFollowedCreators(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "search_string", required = false) String searchString,
             @RequestParam(value = "access_token") String accessToken
     ) {
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
 
-        List<User> results;
+        List<FollowedCreator> results;
 
         if (hasSearchString) {
             results = userService.findFollowedCreatorsWithSearch(userId, searchString, accessToken);
@@ -62,14 +64,13 @@ public class UserController {
 
 
     @PostMapping("/{user_id}/followed/{creator_id}")
-    public ResponseEntity<User> addFollowedCreator(
+    public ResponseEntity<FollowedCreator> addFollowedCreator(
             @PathVariable(value = "user_id") UUID userId,
             @PathVariable(value = "creator_id") UUID creatorId,
-            @RequestParam(value = "is_followed") Boolean isFollowed,
             @RequestParam(value = "access_token") String accessToken
     ) {
-        return new ResponseEntity<User>(
-                userService.addFollowedCreator(userId, creatorId, isFollowed, accessToken),
+        return new ResponseEntity<FollowedCreator>(
+                userService.addFollowedCreator(userId, creatorId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }
@@ -86,12 +87,12 @@ public class UserController {
     }
 
     @DeleteMapping("/{user_id}/followed/{creator_id}")
-    public ResponseEntity<User> removeFollowedCreator(
+    public ResponseEntity<FollowedCreator> removeFollowedCreator(
             @PathVariable(value = "user_id") UUID userId,
             @PathVariable(value = "creator_id") UUID creatorId,
             @RequestParam(value = "access_token") String accessToken
     ) {
-        return new ResponseEntity<User>(
+        return new ResponseEntity<FollowedCreator>(
                 userService.removeFollowedCreator(userId, creatorId, accessToken),
                 HttpStatus.NO_CONTENT
         );

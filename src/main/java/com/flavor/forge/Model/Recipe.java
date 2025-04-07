@@ -19,12 +19,12 @@ public class Recipe {
     private String recipeDescription;
 
     @ElementCollection
-    @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
+    @CollectionTable(name = "recipeIngredients", joinColumns = @JoinColumn(name = "recipeId"))
     @Column(name = "ingredient")
     private List<Ingredient> ingredients;
 
     @ElementCollection
-    @CollectionTable(name = "recipe_steps", joinColumns = @JoinColumn(name = "recipe_id"))
+    @CollectionTable(name = "recipeSteps", joinColumns = @JoinColumn(name = "recipeId"))
     @Column(name = "step")
     private List<String> steps;
 
