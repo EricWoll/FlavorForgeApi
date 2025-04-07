@@ -27,28 +27,6 @@ public class UserController {
         );
     }
 
-    @PutMapping("/{user_id}")
-    public ResponseEntity<User> updateUser(
-            @PathVariable(value = "user_id") UUID userId,
-            @RequestParam(value = "user") User user,
-            @RequestParam(value = "access_token") String accessToken
-    ) {
-        return new ResponseEntity<User>(
-                userService.updateUser(userId, user, accessToken),
-                HttpStatus.OK
-        );
-    }
-
-    @DeleteMapping("/{user_id}")
-    public ResponseEntity<User> deleteUser(
-            @PathVariable(value = "user_id") UUID userId,
-            @RequestParam(value = "access_token") String accessToken
-    ) {
-        return new ResponseEntity<User>(
-                userService.deleteUser(userId, accessToken),
-                HttpStatus.NO_CONTENT
-        );
-    }
 
     @GetMapping("/{user_id}/followed")
     public ResponseEntity<List<User>> findFollowedCreators(
@@ -69,6 +47,20 @@ public class UserController {
         return ResponseEntity.ok(results);
     }
 
+
+    @PutMapping("/{user_id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "user") User user,
+            @RequestParam(value = "access_token") String accessToken
+    ) {
+        return new ResponseEntity<User>(
+                userService.updateUser(userId, user, accessToken),
+                HttpStatus.OK
+        );
+    }
+
+
     @PostMapping("/{user_id}/followed/{creator_id}")
     public ResponseEntity<User> addFollowedCreator(
             @PathVariable(value = "user_id") UUID userId,
@@ -78,6 +70,17 @@ public class UserController {
     ) {
         return new ResponseEntity<User>(
                 userService.addFollowedCreator(userId, creatorId, isFollowed, accessToken),
+                HttpStatus.NO_CONTENT
+        );
+    }
+
+    @DeleteMapping("/{user_id}")
+    public ResponseEntity<User> deleteUser(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "access_token") String accessToken
+    ) {
+        return new ResponseEntity<User>(
+                userService.deleteUser(userId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }

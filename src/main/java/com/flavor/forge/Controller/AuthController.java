@@ -26,6 +26,7 @@ public class AuthController {
         );
     }
 
+
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> registerUser(@RequestBody User user) {
         return new ResponseEntity<AuthResponse>(
@@ -33,6 +34,7 @@ public class AuthController {
                 HttpStatus.OK
         );
     }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshUser(
@@ -44,6 +46,7 @@ public class AuthController {
         );
     }
 
+
     @PostMapping("/forgot_password")
     public ResponseEntity<Boolean> sendEmailForgottenPassword(
             @RequestParam("user_email") String userEmail
@@ -53,6 +56,7 @@ public class AuthController {
                 HttpStatus.NO_CONTENT
         );
     }
+
 
     @PostMapping("/generate_unique_uuid/{user_id}")
     public ResponseEntity<UUID> generateUniqueUUIDForPassword(
@@ -65,6 +69,7 @@ public class AuthController {
                 HttpStatus.OK
         );
     }
+
 
     @PostMapping("/update_password")
     public  ResponseEntity<Boolean> updateUserPassword(

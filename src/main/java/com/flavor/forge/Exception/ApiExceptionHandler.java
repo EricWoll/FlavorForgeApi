@@ -20,7 +20,8 @@ public class ApiExceptionHandler {
             RecipeExistsException.class,
             RecipeNotFoundException.class,
             UserExistsException.class,
-            UserNotFoundException.class
+            UserNotFoundException.class,
+            DatabaseCRUDException.class
     })
     public ResponseEntity<Object> handleApiExceptions(Exception e) {
         HttpStatus badRequest = HttpStatus.BAD_REQUEST;

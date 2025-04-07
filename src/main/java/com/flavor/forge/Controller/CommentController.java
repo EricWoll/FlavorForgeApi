@@ -1,6 +1,7 @@
 package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.Comment;
+import com.flavor.forge.Service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ public class CommentController {
         );
     }
 
+
     @PostMapping("/")
     public ResponseEntity<Comment> createComment(
             @RequestParam(value = "comment") Comment comment,
@@ -38,17 +40,19 @@ public class CommentController {
         );
     }
 
+
     @PutMapping("/{comment_id}")
     public ResponseEntity<Comment> updateComment(
             @PathVariable(value = "comment_id") UUID commentId,
-            @RequestParam(value = "comment") Comment comment,
+            @RequestParam(value = "comment") Comment commentBody,
             @RequestParam(value = "access_token") String accessToken
     ) {
         return new ResponseEntity<Comment>(
-                commentService.updateComment(commentId, comment, accessToken),
+                commentService.updateComment(commentId, commentBody, accessToken),
                 HttpStatus.OK
         );
     }
+
 
     @DeleteMapping("/{comment_id}")
     public ResponseEntity<Comment> deleteComment(

@@ -41,16 +41,6 @@ public class RecipeController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<Recipe> createRecipe(
-            @RequestParam(value = "recipe") Recipe recipe,
-            @RequestParam(value = "access_token") String accessToken
-    ) {
-        return new ResponseEntity<Recipe>(
-                recipeService.createRecipe(recipe, accessToken),
-                HttpStatus.OK
-        );
-    }
 
     @GetMapping("/{recipe_id}")
     public ResponseEntity<Optional<Recipe>> findSingleRecipe(
@@ -62,28 +52,6 @@ public class RecipeController {
         );
     }
 
-    @PutMapping("/{recipe_id}")
-    public ResponseEntity<Recipe> updateRecipe(
-            @PathVariable(value = "recipe_id") UUID recipeId,
-            @RequestParam(value = "recipe") Recipe recipe,
-            @RequestParam(value = "access_token") String accessToken
-    ) {
-        return new ResponseEntity<Recipe>(
-                recipeService.updateRecipe(recipeId, recipe, accessToken),
-                HttpStatus.OK
-        );
-    }
-
-    @DeleteMapping("/{recipe_id}")
-    public ResponseEntity<Recipe> deleteRecipe(
-            @PathVariable(value = "recipe_id") UUID recipeId,
-            @RequestParam("access_token") String accessToken
-    ) {
-        return new ResponseEntity<Recipe>(
-                recipeService.deleteRecipe(recipeId, accessToken),
-                HttpStatus.NO_CONTENT
-        );
-    }
 
     @GetMapping("/liked/{user_id}")
     public ResponseEntity<List<Recipe>> searchLikedRecipes (
@@ -110,6 +78,7 @@ public class RecipeController {
         return ResponseEntity.ok(results);
     }
 
+
     @GetMapping("/creator/{user_id}")
     public ResponseEntity<List<Recipe>> searchCreatorRecipes (
             @PathVariable(value = "user_id") UUID userId,
@@ -133,5 +102,42 @@ public class RecipeController {
         }
 
         return ResponseEntity.ok(results);
+    }
+
+
+    @PostMapping("/")
+    public ResponseEntity<Recipe> createRecipe(
+            @RequestParam(value = "recipe") Recipe recipe,
+            @RequestParam(value = "access_token") String accessToken
+    ) {
+        return new ResponseEntity<Recipe>(
+                recipeService.createRecipe(recipe, accessToken),
+                HttpStatus.OK
+        );
+    }
+
+
+    @PutMapping("/{recipe_id}")
+    public ResponseEntity<Recipe> updateRecipe(
+            @PathVariable(value = "recipe_id") UUID recipeId,
+            @RequestParam(value = "recipe") Recipe recipe,
+            @RequestParam(value = "access_token") String accessToken
+    ) {
+        return new ResponseEntity<Recipe>(
+                recipeService.updateRecipe(recipeId, recipe, accessToken),
+                HttpStatus.OK
+        );
+    }
+
+
+    @DeleteMapping("/{recipe_id}")
+    public ResponseEntity<Recipe> deleteRecipe(
+            @PathVariable(value = "recipe_id") UUID recipeId,
+            @RequestParam("access_token") String accessToken
+    ) {
+        return new ResponseEntity<Recipe>(
+                recipeService.deleteRecipe(recipeId, accessToken),
+                HttpStatus.NO_CONTENT
+        );
     }
 }
