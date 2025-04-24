@@ -66,6 +66,7 @@ public class SecurityConfig {
                                 "/api/v2/auth/refresh",
                                 "/api/v2/comments/create",
                                 "/api/v2/recipes/create",
+                                "/api/v2/recipes/liked/**",
                                 "/api/v2/users/followed/**"
                         ).hasRole(ERole.FREE.getRole())
 
@@ -82,6 +83,7 @@ public class SecurityConfig {
                                 HttpMethod.DELETE,
                                 "/api/v2/comments/delete/**",
                                 "/api/v2/recipes/delete/**",
+                                "/api/v2/recipes/liked/**",
                                 "/api/v2/users/delete/**",
                                 "/api/v2/users/followed/**"
                         ).hasRole(ERole.FREE.getRole())

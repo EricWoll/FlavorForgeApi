@@ -2,6 +2,7 @@ package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
 import com.flavor.forge.Model.Ingredient;
+import com.flavor.forge.Model.LikedRecipe;
 import com.flavor.forge.Model.Recipe;
 import com.flavor.forge.Service.RecipeService;
 import jakarta.validation.Valid;
@@ -85,7 +86,19 @@ public class RecipeController {
     ) {
         return new ResponseEntity<Recipe>(
                 recipeService.createRecipe(recipe, accessToken),
-                HttpStatus.OK
+                HttpStatus.CREATED
+        );
+    }
+
+    @PostMapping("/liked/{user_id}")
+    public ResponseEntity<LikedRecipe> addLikedRecipe(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "recipe_id") UUID recipeId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        return  new ResponseEntity<LikedRecipe>(
+                recipeService.addLikedRecipe(userId, recipeId, accessToken),
+                HttpStatus.CREATED
         );
     }
 
@@ -111,6 +124,18 @@ public class RecipeController {
     ) {
         return new ResponseEntity<Recipe>(
                 recipeService.deleteRecipeById(recipeId, accessToken),
+                HttpStatus.NO_CONTENT
+        );
+    }
+
+    @DeleteMapping("/liked/{user_id}")
+    public ResponseEntity<LikedRecipe> removeLikedRecipe(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "recipe_id") UUID recipeId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        return new ResponseEntity<LikedRecipe>(
+                recipeService.removeLikedRecipe(userId, recipeId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }

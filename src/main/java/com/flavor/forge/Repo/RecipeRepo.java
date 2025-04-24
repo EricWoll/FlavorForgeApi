@@ -99,60 +99,6 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
             @Param("listOffset") int listOffset
     );
 
-    @Query(value = """
-            SELECT r.recipe_id,
-                   r.creator_id,
-                   c.image_id AS creator_image_id,
-                   c.username AS creator_username,
-                   r.recipe_name,
-                   r.image_id AS recipe_image_id,
-                   r.recipe_description,
-                   r.ingredients,
-                   r.steps,
-                   r.likes_count,
-                   r.views_count
-            FROM recipe r
-            INNER JOIN users c ON r.creator_id = c.user_id
-            INNER JOIN liked_recipe lr
-                ON r.recipe_id = lr.recipe_id
-                 WHERE lr.user_id = :userId
-            ORDER BY RANDOM()
-            LIMIT :limit OFFSET :listOffset
-            """, nativeQuery = true)
-    List<Object[]> findLikedRecipesRandom(
-            @Param("userId") UUID userId,
-            @Param("limit") short limit,
-            @Param("listOffset") int listOffset
-    );
-
-    @Query(value = """
-            SELECT r.recipe_id,
-                   r.creator_id,
-                   c.image_id AS creator_image_id,
-                   c.username AS creator_username,
-                   r.recipe_name,
-                   r.image_id AS recipe_image_id,
-                   r.recipe_description,
-                   r.ingredients,
-                   r.steps,
-                   r.likes_count,
-                   r.views_count
-            FROM recipe r
-            INNER JOIN users c ON r.creator_id = c.user_id
-            INNER JOIN liked_recipe lr ON r.recipe_id = lr.recipe_id
-                WHERE LOWER(r.recipe_name) LIKE LOWER(CONCAT('%', :searchWord, '%'))
-                AND (:ingredients IS NULL OR r.ingredients @> CAST(:ingredients AS text[]))
-                AND lr.user_id = :userId
-            LIMIT :limit OFFSET :listOffset
-            """, nativeQuery = true)
-    List<Object[]> findLikedRecipesWithSearchWordAndFilters(
-            @Param("userId") UUID userId,
-            @Param("searchWord") String searchWord,
-            @Param("ingredients") List<String> ingredients,
-            @Param("limit") short limit,
-            @Param("listOffset") int listOffset
-    );
-
     boolean existsByRecipeName(String name);
     boolean existsByRecipeId(UUID recipeId);
 

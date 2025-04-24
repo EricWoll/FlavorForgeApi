@@ -3,10 +3,15 @@ package com.flavor.forge.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flavor.forge.Exception.CustomExceptions.RecipeEmptyException;
+import com.flavor.forge.Exception.CustomExceptions.RecipeExistsException;
 import com.flavor.forge.Exception.CustomExceptions.RecipeNotFoundException;
+import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
 import com.flavor.forge.Model.Ingredient;
+import com.flavor.forge.Model.LikedRecipe;
 import com.flavor.forge.Model.Recipe;
+import com.flavor.forge.Model.User;
+import com.flavor.forge.Repo.LikedRecipeRecipe;
 import com.flavor.forge.Repo.RecipeRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
@@ -31,6 +36,9 @@ public class RecipeService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private LikedRecipeRecipe likedRecipeRepo;
 
     @Autowired
     private JwtService jwtService;
@@ -91,7 +99,7 @@ public class RecipeService {
         jwtService.validateAccessTokenCredentials(accessToken);
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
-        List<Object[]> recipeList = recipeRepo.findLikedRecipesRandom(userId, searchLimit, listOffset);
+        List<Object[]> recipeList = likedRecipeRepo.findLikedRecipesRandom(userId, searchLimit, listOffset);
 
         if (recipeList.isEmpty()) {
             logger.error("No Recipes were found!");
@@ -119,7 +127,7 @@ public class RecipeService {
                     .toList();
         };
 
-        List<Object[]> recipeList = recipeRepo.findLikedRecipesWithSearchWordAndFilters(
+        List<Object[]> recipeList = likedRecipeRepo.findLikedRecipesWithSearchWordAndFilters(
                 userId, searchWord, ingredientNames, searchLimit, listOffset
         );
 
@@ -198,6 +206,32 @@ public class RecipeService {
 
         recipeRepo.deleteByRecipeId(foundRecipe.getRecipeId());
         return  foundRecipe;
+    }
+
+    public LikedRecipe addLikedRecipe(UUID userId, UUID recipeId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        if (likedRecipeRepo.existsLikedRecipeByUserIdAndRecipeId(recipeId, userId)) {
+            throw new RecipeExistsException("Recipe has already been liked by user with id of: " + userId);
+        };
+
+        Recipe foundRecipe = recipeRepo.findByRecipeId(recipeId).orElseThrow(() -> new RecipeNotFoundException("Recipe with Id: " + recipeId + " does not exist!"));
+        User foundUser = userRepo.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User with Id: " + userId + " does not exist!"));
+
+        return likedRecipeRepo.save(new LikedRecipe(foundUser, foundRecipe));
+    }
+
+    public LikedRecipe removeLikedRecipe(UUID userId, UUID recipeId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        LikedRecipe foundLikedRecipe = likedRecipeRepo.findLikedRecipeByUserIdAndRecipeId(userId, recipeId).orElseThrow(
+                () -> new RecipeExistsException("Recipe has NOT been liked by user with id of: " + userId)
+        );
+
+        likedRecipeRepo.deleteById(userId);
+        return foundLikedRecipe;
     }
 
     // Mapper Utility for SQL Queries
