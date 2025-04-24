@@ -1,6 +1,6 @@
 package com.flavor.forge.Controller;
 
-import com.flavor.forge.Model.AuthResponse;
+import com.flavor.forge.Model.DTO.AuthDTO;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,8 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @Controller
 @RequestMapping("api/v2/auth")
 public class AuthController {
@@ -20,8 +18,8 @@ public class AuthController {
    private UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUser(@RequestBody User user) {
-        return new ResponseEntity<AuthResponse>(
+    public ResponseEntity<AuthDTO> loginUser(@RequestBody User user) {
+        return new ResponseEntity<AuthDTO>(
                 userService.login(user),
                 HttpStatus.OK
         );
@@ -29,8 +27,8 @@ public class AuthController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> registerUser(@RequestBody User user) {
-        return new ResponseEntity<AuthResponse>(
+    public ResponseEntity<AuthDTO> registerUser(@RequestBody User user) {
+        return new ResponseEntity<AuthDTO>(
                 userService.createUser(user),
                 HttpStatus.OK
         );
@@ -38,10 +36,10 @@ public class AuthController {
 
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refreshUser(
+    public ResponseEntity<AuthDTO> refreshUser(
             HttpServletRequest request
     ) {
-        return new ResponseEntity<AuthResponse>(
+        return new ResponseEntity<AuthDTO>(
                 userService.refreshJwToken(request),
                 HttpStatus.OK
         );

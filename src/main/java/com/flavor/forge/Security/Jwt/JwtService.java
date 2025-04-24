@@ -1,20 +1,28 @@
 package com.flavor.forge.Security.Jwt;
 
+import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.User;
+import com.flavor.forge.Repo.UserRepo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
+
+    @Autowired
+    private UserRepo userRepo;
 
     @Value("${forge.app.jwtSecret}")
     private String jwtSecret;
@@ -74,6 +82,42 @@ public class JwtService {
             throw new IllegalArgumentException("Illegal Argument JWT");
         }
 
+    }
+
+    public String trimJWTBearerToken(String bearerToken) {
+        return bearerToken.startsWith("Bearer ")
+                ? bearerToken.substring(7)
+                : bearerToken;
+    }
+
+    public boolean validateAccessTokenCredentials(String bearerToken) {
+        String accessToken = trimJWTBearerToken(bearerToken);
+
+        if (!validateToken(accessToken)) {
+            throw new BadCredentialsException("Bad Credentials");
+        }
+        return true;
+    }
+
+    public boolean validateAccessTokenAgainstFoundUserId(String bearerToken, UUID foundUser) {
+        String accessToken = trimJWTBearerToken(bearerToken);
+        String queuedUsername = getUsername(accessToken);
+
+        User userQueued = userRepo.findByUserId(foundUser).orElseThrow(() -> new UserNotFoundException("User Not Found!"));
+        if (!queuedUsername.equals(userQueued.getUsername())) {
+            throw new BadCredentialsException("User queued for Adding is not the same as the Active user!");
+        }
+        return true;
+    }
+
+    public boolean validateAccessTokenAgainstFoundUsername(String bearerToken, String foundUsername) {
+        String accessToken = trimJWTBearerToken(bearerToken);
+        String queuedUsername = getUsername(accessToken);
+
+        if (!queuedUsername.equals(foundUsername)) {
+            throw new BadCredentialsException("User queued for Adding is not the same as the Active user!");
+        }
+        return true;
     }
 
     public <T> T getClaimsFromToken(String token, Function<Claims, T> claimsResolver) {

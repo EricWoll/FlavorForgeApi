@@ -3,7 +3,7 @@ package com.flavor.forge.Service;
 import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
-import com.flavor.forge.Model.AuthResponse;
+import com.flavor.forge.Model.DTO.AuthDTO;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -16,9 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,13 +41,16 @@ public class UserService {
     @Autowired
     private JwtService jwtService;
 
+    @Value("${SEARCH_LIMIT}")
+    private short searchLimit;
+
     @Value("${forge.app.noImage}")
     private String noImageId;
 
     @Autowired
     private AuthenticationManager authManager;
 
-    private BCryptPasswordEncoder BcpEncoder = new BCryptPasswordEncoder(10);
+    private BCryptPasswordEncoder bcpEncoder = new BCryptPasswordEncoder(BCryptPasswordEncoder.BCryptVersion.$2Y, 12);
 
     public User findSingleUser(UUID userId) {
         User foundUser = userRepo.findByUserId(userId).orElseThrow(() -> {
@@ -62,7 +62,7 @@ public class UserService {
         return foundUser;
     }
 
-    public AuthResponse createUser(User user) {
+    public AuthDTO createUser(User user) {
         if (userRepo.existsByUsername(user.getUsername())) {
             logger.error("User already exists with username of: {}.", user.getUsername());
             throw new UserExistsException("Username Already Exists!");
@@ -80,7 +80,7 @@ public class UserService {
                 new User(
                         user.getUsername(),
                         user.getEmail(),
-                        BcpEncoder.encode(user.getPassword()),
+                        bcpEncoder.encode(user.getPassword()),
                         user.getImageId(),
                         0,
                         "",
@@ -91,11 +91,7 @@ public class UserService {
     }
 
     public User updateUser(UUID userId, User user, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        }
-
-        String queuedUsername = jwtService.getUsername(accessToken);
+        jwtService.validateAccessTokenCredentials(accessToken);
 
         User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(() -> {
@@ -103,9 +99,7 @@ public class UserService {
                     return new UserNotFoundException("Some User information is missing!");
                 });
 
-        if (!queuedUsername.equals(foundUser.getUsername())) {
-            throw new BadCredentialsException("User queued for Deletion is not the same as the Active user!");
-        }
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, foundUser.getUsername());
 
         foundUser.setUsername(user.getUsername());
         foundUser.setEmail(user.getEmail());
@@ -117,11 +111,7 @@ public class UserService {
     }
 
     public User deleteUser(UUID userId, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        }
-
-        String queuedUsername = jwtService.getUsername(accessToken);
+        jwtService.validateAccessTokenCredentials(accessToken);
 
         User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(()-> {
@@ -129,15 +119,13 @@ public class UserService {
                     return new UserNotFoundException("User Does Not Exist!");
                 });
 
-        if (!queuedUsername.equals(foundUser.getUsername())) {
-            throw new BadCredentialsException("User queued for Deletion is not the same as the Active user!");
-        }
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, foundUser.getUsername());
 
         userRepo.deleteByUserId(userId);
         return foundUser;
     }
 
-    public AuthResponse login(User user) {
+    public AuthDTO login(User user) {
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getUsername(),
@@ -154,28 +142,24 @@ public class UserService {
         return JwToken(foundUser);
     }
 
-    public List<FollowedCreator> findFollowedCreators(UUID userId, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        };
+    public List<FollowedCreator> findFollowedCreators(UUID userId, String accessToken, int listOffset) {
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-        return followedCreatorRepo.findAllByUserId(userId);
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        return followedCreatorRepo.findAllByUserId(userId, searchLimit, listOffset);
     }
 
-    public List<FollowedCreator> findFollowedCreatorsWithSearch(UUID userId, String searchString, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        };
+    public List<FollowedCreator> findFollowedCreatorsWithSearch(UUID userId, String searchString, String accessToken, int listOffset) {
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-        return followedCreatorRepo.findByUser_UserIdAndCreator_UsernameContainingIgnoreCase(userId, searchString);
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        return followedCreatorRepo.searchWithString(userId, searchString, searchLimit, listOffset);
     }
 
     public FollowedCreator addFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        };
-
-        String queuedUsername = jwtService.getUsername(accessToken);
+        jwtService.validateAccessTokenCredentials(accessToken);
 
         if (followedCreatorRepo.existsByUser_UserIdAndCreator_UserId(userId, creatorId)) {
             throw new UserExistsException("User has already Followed the creator!");
@@ -183,9 +167,7 @@ public class UserService {
 
         User userQueued = userRepo.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User Not Found!"));
 
-        if (!queuedUsername.equals(userQueued.getUsername())) {
-            throw new BadCredentialsException("User queued for Adding is not the same as the Active user!");
-        }
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, userQueued.getUsername());
 
         User creatorQueued = userRepo.findByUserId(creatorId).orElseThrow(() -> new UserNotFoundException("Creator Not Found!"));
 
@@ -196,20 +178,14 @@ public class UserService {
     }
 
     public FollowedCreator removeFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        };
-
-        String queuedUsername = jwtService.getUsername(accessToken);
+        jwtService.validateAccessTokenCredentials(accessToken);
 
         FollowedCreator queuedFollowedItem = followedCreatorRepo.findByUser_UserIdAndCreator_UserId(userId, creatorId).orElseThrow(() -> {
             logger.error("No Follow data found in database for userId: {}, and creatorId: {}", userId, creatorId);
             return new UserNotFoundException("No Follow data found in database for userId: " + userId +  ", and creatorId: " + creatorId);
         });
 
-        if (!queuedUsername.equals(queuedFollowedItem.getUser().getUsername())) {
-            throw new BadCredentialsException("User queued for Deletion is not the same as the Active user!");
-        }
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, queuedFollowedItem.getUser().getUsername());
 
         try {
             followedCreatorRepo.deleteByUser_UserIdAndCreator_UserId(userId, creatorId);
@@ -220,11 +196,11 @@ public class UserService {
         return queuedFollowedItem;
     }
 
-    private AuthResponse JwToken(User user) {
+    private AuthDTO JwToken(User user) {
         String accessToken = jwtService.generateJwtToken(user);
         String refreshToken = jwtService.generateJwtRefreshToken(user);
 
-        return AuthResponse.builder()
+        return AuthDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
@@ -235,7 +211,7 @@ public class UserService {
                 .build();
     }
 
-    public AuthResponse refreshJwToken(
+    public AuthDTO refreshJwToken(
             HttpServletRequest request
     ) {
         String authHeader = request.getHeader("Authorization");
@@ -253,7 +229,7 @@ public class UserService {
 
                 String accessToken = jwtService.generateJwtToken(user);
 
-                return AuthResponse.builder()
+                return AuthDTO.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
                         .username(user.getUsername())

@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,9 +31,9 @@ public class CommentService {
     }
 
     public Comment createComment(Comment comment, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        }
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, comment.getUserId());
 
         if (
                 comment.getCommentText() == null || comment.getCommentText().isEmpty()
@@ -58,9 +57,7 @@ public class CommentService {
     }
 
     public Comment updateComment(UUID commentId, Comment commentBody, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        }
+        jwtService.validateAccessTokenCredentials(accessToken);
 
         if (
                 commentBody.getCommentText() == null || commentBody.getCommentText().isEmpty()
@@ -76,6 +73,8 @@ public class CommentService {
                     return new CommentNotFoundException("Comment Not Found With Id Of: " + commentId);
                 });
 
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
+
         foundComment.setCommentText(commentBody.getCommentText());
 
         try {
@@ -89,17 +88,17 @@ public class CommentService {
     }
 
     public Comment deleteComment(UUID commentId, String accessToken) {
-        if (!jwtService.validateToken(accessToken)) {
-            throw new BadCredentialsException("Bad Credentials");
-        }
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-        Comment comment = commentRepo.findByCommentId(commentId).orElseThrow(()-> {
+        Comment foundComment = commentRepo.findByCommentId(commentId).orElseThrow(()-> {
             logger.error("Comment does not exists with Id of \"{}\" and cannot be deleted!", commentId);
             return new CommentNotFoundException("Comment Not Found for Id: " + commentId);
         });
 
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
+
         try {
-            commentRepo.deleteByCommentId(commentId);
+            commentRepo.deleteByCommentId(foundComment.getCommentId());
         } catch (IllegalArgumentException e) {
             logger.error("Invalid comment ID: \"{}\"", e.getMessage());
             throw new IllegalArgumentException("Invalid comment ID: " + e.getMessage());
@@ -109,6 +108,6 @@ public class CommentService {
             throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
         }
 
-        return comment;
+        return foundComment;
     }
 }

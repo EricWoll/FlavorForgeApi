@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface LikedRecipeRecipe extends JpaRepository<LikedRecipe, UUID> {
 
-    Optional<LikedRecipe> findByRecipeId(UUID id);
+    Optional<LikedRecipe> findByRecipe_recipeId(UUID recipeId);
 
-    List<LikedRecipe> findAllByUserId(UUID userId);
+    List<LikedRecipe> findAllByUser_userId(UUID userId);
 }

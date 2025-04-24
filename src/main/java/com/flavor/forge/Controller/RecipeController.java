@@ -1,6 +1,10 @@
 package com.flavor.forge.Controller;
 
+import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
+import com.flavor.forge.Model.Ingredient;
 import com.flavor.forge.Model.Recipe;
+import com.flavor.forge.Service.RecipeService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -18,97 +21,67 @@ public class RecipeController {
     @Autowired
     private RecipeService recipeService;
 
-    @GetMapping("/")
-    public ResponseEntity<List<Recipe>> searchRecipes(
-            @RequestParam(value = "filters", required = false) List<String> filters,
-            @RequestParam(value = "search_string", required = false) String searchString
+    @GetMapping("/search")
+    public ResponseEntity<List<RecipeWithCreatorDTO>> searchRecipes(
+            @RequestParam(value = "ingredients", required = false) List<Ingredient> ingredients,
+            @RequestParam(value = "search_string", required = false) String searchString,
+            @RequestParam(value = "creator_id", required = false) UUID creatorId,
+            @RequestParam(value = "listOffset", defaultValue = "0") int listOffset
     ) {
-        boolean hasFilters = filters != null && !filters.isEmpty();
+        boolean hasIngredients = ingredients != null && !ingredients.isEmpty();
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
+        creatorId = (creatorId == null || creatorId.toString().isBlank()) ? null : creatorId;
 
-        List<Recipe> results;
+        List<RecipeWithCreatorDTO> results;
 
-        if (hasFilters && hasSearchString) {
-            results = recipeService.searchWithSearchWordAndFilter(searchString, filters);
-        } else if (hasFilters) {
-            results = recipeService.searchWithFilters(filters);
-        } else if (hasSearchString) {
-            results = recipeService.searchWithSearchWord(searchString);
+        if (hasIngredients || hasSearchString) {
+            results = recipeService.searchWithSearchWordAndIngredients(searchString, ingredients, creatorId, listOffset);
         } else {
-            results = recipeService.defaultSearch();
+            results = recipeService.defaultSearch(listOffset, creatorId);
         }
 
         return ResponseEntity.ok(results);
     }
 
 
-    @GetMapping("/{recipe_id}")
-    public ResponseEntity<Optional<Recipe>> findSingleRecipe(
+    @GetMapping("/search/{recipe_id}")
+    public ResponseEntity<RecipeWithCreatorDTO> findSingleRecipe(
             @PathVariable(value = "recipe_id") UUID recipeId
     ) {
-        return new ResponseEntity<Optional<Recipe>>(
-                recipeService.findSingleRecipe(recipeId),
+        return new ResponseEntity<RecipeWithCreatorDTO>(
+                recipeService.findByRecipeId(recipeId),
                 HttpStatus.OK
         );
     }
 
 
     @GetMapping("/liked/{user_id}")
-    public ResponseEntity<List<Recipe>> searchLikedRecipes (
+    public ResponseEntity<List<RecipeWithCreatorDTO>> searchLikedRecipes (
             @PathVariable(value = "user_id") UUID userId,
-            @RequestParam(value = "access_token") String accessToken,
-            @RequestParam(value = "filters", required = false) List<String> filters,
-            @RequestParam(value = "search_string", required = false) String searchString
+            @RequestParam(value = "filters", required = false) List<Ingredient> filters,
+            @RequestParam(value = "search_string", required = false) String searchString,
+            @RequestParam(value = "listOffset", defaultValue = "0") int listOffset,
+            @RequestHeader (name="Authorization") String accessToken
     ) {
         boolean hasFilters = filters != null && !filters.isEmpty();
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
 
-        List<Recipe> results;
+        List<RecipeWithCreatorDTO> results;
 
         if (hasFilters && hasSearchString) {
-            results = recipeService.searchLikedWithSearchWordAndFilter(searchString, filters, userId, accessToken);
-        } else if (hasFilters) {
-            results = recipeService.searchLikedWithFilters(filters, userId, accessToken);
-        } else if (hasSearchString) {
-            results = recipeService.searchLikedWithSearchWord(searchString, userId, accessToken);
+            results = recipeService.searchLikedRecipesWithSearchWordAndFilters(userId, searchString, filters, listOffset, accessToken);
         } else {
-            results = recipeService.defaultSearchLiked(userId, accessToken);
+            results = recipeService.searchLikedRecipesDefault(userId, listOffset, accessToken);
         }
 
         return ResponseEntity.ok(results);
     }
 
 
-    @GetMapping("/creator/{user_id}")
-    public ResponseEntity<List<Recipe>> searchCreatorRecipes (
-            @PathVariable(value = "user_id") UUID userId,
-            @RequestParam(value = "access_token") String accessToken,
-            @RequestParam(value = "filters", required = false) List<String> filters,
-            @RequestParam(value = "search_string", required = false) String searchString
-    ) {
-        boolean hasFilters = filters != null && !filters.isEmpty();
-        boolean hasSearchString = searchString != null && !searchString.isEmpty();
-
-        List<Recipe> results;
-
-        if (hasFilters && hasSearchString) {
-            results = recipeService.searchCreatorWithSearchWordAndFilter(searchString, filters, userId, accessToken);
-        } else if (hasFilters) {
-            results = recipeService.searchCreatorWithFilters(filters, userId, accessToken);
-        } else if (hasSearchString) {
-            results = recipeService.searchCreatorWithSearchWord(searchString, userId, accessToken);
-        } else {
-            results = recipeService.defaultSearchCreator(userId, accessToken);
-        }
-
-        return ResponseEntity.ok(results);
-    }
-
-
-    @PostMapping("/")
+    @PostMapping("/create")
     public ResponseEntity<Recipe> createRecipe(
-            @RequestParam(value = "recipe") Recipe recipe,
-            @RequestParam(value = "access_token") String accessToken
+            @Valid @RequestBody Recipe recipe,
+            @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<Recipe>(
                 recipeService.createRecipe(recipe, accessToken),
@@ -117,11 +90,12 @@ public class RecipeController {
     }
 
 
-    @PutMapping("/{recipe_id}")
+    @PutMapping("/update/{recipe_id}")
     public ResponseEntity<Recipe> updateRecipe(
+            @Valid
             @PathVariable(value = "recipe_id") UUID recipeId,
             @RequestParam(value = "recipe") Recipe recipe,
-            @RequestParam(value = "access_token") String accessToken
+            @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<Recipe>(
                 recipeService.updateRecipe(recipeId, recipe, accessToken),
@@ -130,13 +104,13 @@ public class RecipeController {
     }
 
 
-    @DeleteMapping("/{recipe_id}")
+    @DeleteMapping("/delete/{recipe_id}")
     public ResponseEntity<Recipe> deleteRecipe(
             @PathVariable(value = "recipe_id") UUID recipeId,
-            @RequestParam("access_token") String accessToken
+            @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<Recipe>(
-                recipeService.deleteRecipe(recipeId, accessToken),
+                recipeService.deleteRecipeById(recipeId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }

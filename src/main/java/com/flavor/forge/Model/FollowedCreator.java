@@ -14,14 +14,15 @@ public class FollowedCreator {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "followed_id")
     private UUID followedId;
 
     @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "creatorId", nullable = false)
+    @JoinColumn(name = "creator_id", nullable = false)
     private User creator;
 
     public FollowedCreator(User user, User creator) {
