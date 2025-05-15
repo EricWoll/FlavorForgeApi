@@ -50,9 +50,10 @@ public class RecipeService {
     private String noImageId;
 
     public RecipeWithCreatorDTO findByRecipeId(UUID recipeId) {
-        return recipeRepo.findByRecipeIdWithCreator(recipeId).orElseThrow(
+        Object[] recipe = (Object[]) recipeRepo.findByRecipeIdWithCreator(recipeId).orElseThrow(
                 () -> new RecipeNotFoundException("No recipe with the Id of: " + recipeId + " was found")
         );
+        return sqlQueryObjectMapToRecipeWithCreatorDTO(recipe);
     }
 
     public List<RecipeWithCreatorDTO> defaultSearch(int listOffset, UUID creatorId) {
@@ -234,7 +235,7 @@ public class RecipeService {
         return foundLikedRecipe;
     }
 
-    // Mapper Utility for SQL Queries
+    // Mapper Utility for SQL Queries to Recipes
     private RecipeWithCreatorDTO sqlQueryObjectMapToRecipeWithCreatorDTO(Object[] sqlQueryResult) {
         UUID recipeId = (UUID) sqlQueryResult[0];
         UUID recipeCreatorId = (UUID) sqlQueryResult[1];

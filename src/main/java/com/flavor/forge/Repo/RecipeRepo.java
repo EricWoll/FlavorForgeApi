@@ -1,6 +1,5 @@
 package com.flavor.forge.Repo;
 
-import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
 import com.flavor.forge.Model.Recipe;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,33 +14,35 @@ import java.util.UUID;
 public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
 
     @Query(value = """
-                SELECT r.recipe_id,
-                   r.creator_id,
-                   c.image_id AS creator_image_id,
-                   c.username AS creator_username,
-                   r.recipe_name,
-                   r.image_id AS recipe_image_id,
-                   r.recipe_description,
-                   r.ingredients,
-                   r.steps,
-                   r.likes_count,
-                   r.views_count
+                SELECT
+                r.recipe_id AS recipeId,
+               r.creator_id AS creatorId,
+               c.image_id AS creatorImageId,
+               c.username AS creatorUsername,
+               r.recipe_name AS recipeName,
+               r.image_id AS recipeImageId,
+               r.recipe_description AS recipeDescription,
+               r.ingredients AS ingredients,
+               r.steps AS steps,
+               r.likes_count AS likesCount,
+               r.views_count AS viewsCount
             FROM recipe r
-            INNER JOIN users c ON r.creatorId = c.user_id
+            INNER JOIN users c ON r.creator_id = c.user_id
                 WHERE r.recipe_id = :recipeId
             """, nativeQuery = true)
-    Optional<RecipeWithCreatorDTO> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId);
+    Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId);
 
     @Query(value = """
-                SELECT r.recipe_id,
-                   r.creator_id,
-                   r.recipe_name,
-                   r.image_id AS recipe_image_id,
-                   r.recipe_description,
-                   r.ingredients,
-                   r.steps,
-                   r.likes_count,
-                   r.views_count
+                SELECT
+                r.recipe_id AS recipeId,
+               r.creator_id AS creatorId,
+               r.recipe_name AS recipeName,
+               r.image_id AS recipeImageId,
+               r.recipe_description AS recipeDescription,
+               r.ingredients AS ingredients,
+               r.steps AS steps,
+               r.likes_count AS likesCount,
+               r.views_count AS viewsCount
             FROM recipe r
                 WHERE r.recipe_id = :recipeId
             """, nativeQuery = true)
@@ -72,17 +73,17 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
     );
 
     @Query(value = """
-            SELECT r.recipe_id,
-                   r.creator_id,
-                   c.image_id AS creator_image_id,
-                   c.username AS creator_username,
-                   r.recipe_name,
-                   r.image_id AS recipe_image_id,
-                   r.recipe_description,
-                   r.ingredients,
-                   r.steps,
-                   r.likes_count,
-                   r.views_count
+            SELECT r.recipe_id AS recipeId,
+               r.creator_id AS creatorId,
+               c.image_id AS creatorImageId,
+               c.username AS creatorUsername,
+               r.recipe_name AS recipeName,
+               r.image_id AS recipeImageId,
+               r.recipe_description AS recipeDescription,
+               r.ingredients AS ingredients,
+               r.steps AS steps,
+               r.likes_count AS likesCount,
+               r.views_count AS viewsCount
             FROM recipe r
             INNER JOIN users c ON r.creator_id = c.user_id
                 WHERE (:searchWord IS NULL OR LOWER(r.recipe_name) LIKE LOWER(CONCAT('%', :searchWord, '%')))

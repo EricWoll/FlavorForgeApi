@@ -1,5 +1,6 @@
 package com.flavor.forge.Controller;
 
+import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Service.UserService;
@@ -20,12 +21,13 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/search/{user_id}")
-    public ResponseEntity<User> findSingleUser(
-            @PathVariable(value = "user_id") UUID userId
+    @GetMapping("/search/{creator_id}")
+    public ResponseEntity<PublicUserDTO> findSingleUser(
+            @PathVariable(value = "creator_id") UUID creatorId,
+            @RequestParam(value = "user_id", required = false) UUID userId
     ) {
-        return new ResponseEntity<User>(
-                userService.findSingleUser(userId),
+        return new ResponseEntity<PublicUserDTO>(
+                userService.findSinglePublicUser(creatorId, userId),
                 HttpStatus.OK
         );
     }

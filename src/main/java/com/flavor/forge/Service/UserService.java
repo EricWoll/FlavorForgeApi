@@ -4,6 +4,7 @@ import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.DTO.AuthDTO;
+import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -52,14 +53,13 @@ public class UserService {
 
     private BCryptPasswordEncoder bcpEncoder = new BCryptPasswordEncoder(BCryptPasswordEncoder.BCryptVersion.$2Y, 12);
 
-    public User findSingleUser(UUID userId) {
-        User foundUser = userRepo.findByUserId(userId).orElseThrow(() -> {
+    public PublicUserDTO findSinglePublicUser(UUID creatorId, UUID userId) {
+        Object[] user = (Object[]) userRepo.findPublicUserByUserId(creatorId, userId).orElseThrow(() -> {
             logger.error("User not found with userId of: {}.\"", userId);
             return new UserNotFoundException("User not found with userId of: " + userId);
         });
 
-        // Make this return a DTO
-        return foundUser;
+        return sqlQueryObjectMapToPublicUserDTO(user);
     }
 
     public AuthDTO createUser(User user) {
@@ -240,5 +240,17 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    // Mapper Utility for SQL Queries to User
+    private PublicUserDTO sqlQueryObjectMapToPublicUserDTO(Object[] sqlQueryResult) {
+        return PublicUserDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .imageId((String) sqlQueryResult[2])
+                .followerCount((Integer) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .isFollowed(sqlQueryResult.length > 5 ? (Boolean) sqlQueryResult[5] : false)
+                .build();
     }
 }
