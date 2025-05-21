@@ -4,7 +4,9 @@ import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
 import com.flavor.forge.Model.DTO.AuthDTO;
+import com.flavor.forge.Model.DTO.FollowedCreatorDTO;
 import com.flavor.forge.Model.DTO.PublicUserDTO;
+import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -25,6 +27,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -142,20 +145,24 @@ public class UserService {
         return JwToken(foundUser);
     }
 
-    public List<FollowedCreator> findFollowedCreators(UUID userId, String accessToken, int listOffset) {
+    public List<FollowedCreatorDTO> findFollowedCreators(UUID userId, String accessToken, int listOffset) {
         jwtService.validateAccessTokenCredentials(accessToken);
 
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
-        return followedCreatorRepo.findAllByUserId(userId, searchLimit, listOffset);
+        List<Object[]> creatorList = followedCreatorRepo.findAllByUserId(userId, searchLimit, listOffset);
+
+        return creatorList.stream().map(this::sqlQueryObjectMapToFollowedCreatorDTO).toList();
     }
 
-    public List<FollowedCreator> findFollowedCreatorsWithSearch(UUID userId, String searchString, String accessToken, int listOffset) {
+    public List<FollowedCreatorDTO> findFollowedCreatorsWithSearch(UUID userId, String searchString, String accessToken, int listOffset) {
         jwtService.validateAccessTokenCredentials(accessToken);
 
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
-        return followedCreatorRepo.searchWithString(userId, searchString, searchLimit, listOffset);
+        List<Object[]> creatorList = followedCreatorRepo.searchWithString(userId, searchString, searchLimit, listOffset);
+
+        return creatorList.stream().map(this::sqlQueryObjectMapToFollowedCreatorDTO).toList();
     }
 
     public FollowedCreator addFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
@@ -171,10 +178,20 @@ public class UserService {
 
         User creatorQueued = userRepo.findByUserId(creatorId).orElseThrow(() -> new UserNotFoundException("Creator Not Found!"));
 
+        creatorQueued.setFollowerCount(creatorQueued.getFollowerCount() + 1);
 
-        return followedCreatorRepo.save(
-                new FollowedCreator(userQueued, creatorQueued)
-        );
+        FollowedCreator followedCreator;
+
+        try {
+            followedCreator = followedCreatorRepo.save(
+                    new FollowedCreator(userQueued, creatorQueued));
+            userRepo.save(creatorQueued);
+
+        } catch (DataAccessException e) {
+            throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
+        }
+
+        return followedCreator;
     }
 
     public FollowedCreator removeFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
@@ -187,8 +204,15 @@ public class UserService {
 
         jwtService.validateAccessTokenAgainstFoundUsername(accessToken, queuedFollowedItem.getUser().getUsername());
 
+        User creatorQueued = userRepo.findByUserId(creatorId).orElseThrow(() -> new UserNotFoundException("Creator Not Found!"));
+
+        if (creatorQueued.getFollowerCount() > 0) {
+        creatorQueued.setFollowerCount(creatorQueued.getFollowerCount() - 1);
+        }
+
         try {
             followedCreatorRepo.deleteByUser_UserIdAndCreator_UserId(userId, creatorId);
+            userRepo.save(creatorQueued);
         } catch (DataAccessException e) {
             throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
         }
@@ -253,4 +277,16 @@ public class UserService {
                 .isFollowed(sqlQueryResult.length > 5 ? (Boolean) sqlQueryResult[5] : false)
                 .build();
     }
+    // Mapper Utility for SQL Queries to Recipes
+    private FollowedCreatorDTO sqlQueryObjectMapToFollowedCreatorDTO(Object[] sqlQueryResult) {
+        return FollowedCreatorDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .imageId((String) sqlQueryResult[2])
+                .followerCount((Integer) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .isFollowed(true)
+                .build();
+    }
+
 }

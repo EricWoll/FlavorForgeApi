@@ -50,7 +50,8 @@ public class SecurityConfig {
                                 "/api/v2/recipes/search",
                                 "/api/v2/recipes/search/**",
                                 "/api/v2/comments/search/**",
-                                "/api/v2/users/search/**"
+                                "/api/v2/users/search/**",
+                                "/api/v2/images"
                         ).permitAll()
 
                         // Restrict Access through ROLES to GET
@@ -67,7 +68,8 @@ public class SecurityConfig {
                                 "/api/v2/comments/create",
                                 "/api/v2/recipes/create",
                                 "/api/v2/recipes/liked/**",
-                                "/api/v2/users/followed/**"
+                                "/api/v2/users/followed/**",
+                                "api/v2/images"
                         ).hasRole(ERole.FREE.getRole())
 
                         // Restrict Access through ROLES to PUT
@@ -85,7 +87,8 @@ public class SecurityConfig {
                                 "/api/v2/recipes/delete/**",
                                 "/api/v2/recipes/liked/**",
                                 "/api/v2/users/delete/**",
-                                "/api/v2/users/followed/**"
+                                "/api/v2/users/followed/**",
+                                "api/v2/images/**"
                         ).hasRole(ERole.FREE.getRole())
 
                         .anyRequest().authenticated()

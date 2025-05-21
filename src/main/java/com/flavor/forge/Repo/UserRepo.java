@@ -24,7 +24,7 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             CASE
                 WHEN :userId IS NOT NULL AND EXISTS (
                     SELECT 1 FROM followed_creator fc
-                    WHERE fc.user_id = :userId AND fc.creator_id = :creatorId
+                    WHERE fc.followed_user_id = :userId AND fc.followed_creator_id = :creatorId
                 ) THEN true
                 ELSE false
             END AS isFollowed

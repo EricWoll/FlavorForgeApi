@@ -1,5 +1,6 @@
 package com.flavor.forge.Controller;
 
+import com.flavor.forge.Model.DTO.FollowedCreatorDTO;
 import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -34,7 +35,7 @@ public class UserController {
 
 
     @GetMapping("/followed/{user_id}")
-    public ResponseEntity<List<FollowedCreator>> findFollowedCreators(
+    public ResponseEntity<List<FollowedCreatorDTO>> findFollowedCreators(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "search_string", required = false) String searchString,
             @RequestParam(value = "listOffset", defaultValue = "0") int listOffset,
@@ -42,7 +43,7 @@ public class UserController {
     ) {
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
 
-        List<FollowedCreator> results;
+        List<FollowedCreatorDTO> results;
 
         if (hasSearchString) {
             results = userService.findFollowedCreatorsWithSearch(userId, searchString, accessToken, listOffset);

@@ -107,7 +107,7 @@ public class RecipeController {
     public ResponseEntity<Recipe> updateRecipe(
             @Valid
             @PathVariable(value = "recipe_id") UUID recipeId,
-            @RequestParam(value = "recipe") Recipe recipe,
+            @RequestBody Recipe recipe,
             @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<Recipe>(

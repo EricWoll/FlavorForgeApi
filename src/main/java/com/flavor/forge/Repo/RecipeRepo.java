@@ -1,6 +1,7 @@
 package com.flavor.forge.Repo;
 
 import com.flavor.forge.Model.Recipe;
+import jakarta.persistence.SqlResultSetMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,19 +34,20 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
     Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId);
 
     @Query(value = """
-                SELECT
-                r.recipe_id AS recipeId,
-               r.creator_id AS creatorId,
-               r.recipe_name AS recipeName,
-               r.image_id AS recipeImageId,
-               r.recipe_description AS recipeDescription,
-               r.ingredients AS ingredients,
-               r.steps AS steps,
-               r.likes_count AS likesCount,
-               r.views_count AS viewsCount
-            FROM recipe r
-                WHERE r.recipe_id = :recipeId
-            """, nativeQuery = true)
+    SELECT
+        r.recipe_id,
+        r.creator_id,
+        r.recipe_name,
+        r.image_id,
+        r.recipe_description,
+        r.ingredients,
+        r.steps,
+        r.likes_count,
+        r.views_count,
+        r.is_private
+    FROM recipe r
+    WHERE r.recipe_id = :recipeId
+    """, nativeQuery = true)
     Optional<Recipe> findByRecipeId(@Param("recipeId") UUID recipeId);
 
     @Query(value = """

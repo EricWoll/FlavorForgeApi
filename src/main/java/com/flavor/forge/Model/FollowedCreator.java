@@ -18,11 +18,11 @@ public class FollowedCreator {
     private UUID followedId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "followed_user_id", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "creator_id", nullable = false)
+    @JoinColumn(name = "followed_creator_id", nullable = false)
     private User creator;
 
     public FollowedCreator(User user, User creator) {
