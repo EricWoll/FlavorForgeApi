@@ -47,6 +47,7 @@ public class SecurityConfig {
                         // Allow public access to GET
                         .requestMatchers(
                                 HttpMethod.GET,
+                                "/api/v2/users/profile/**",
                                 "/api/v2/recipes/search",
                                 "/api/v2/recipes/search/**",
                                 "/api/v2/comments/search/**",

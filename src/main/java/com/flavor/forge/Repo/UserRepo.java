@@ -36,6 +36,19 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             @Param("userId") UUID userId
     );
 
+    @Query(value = """
+            SELECT u.user_id AS userId,
+            u.username,
+            u.email,
+            u.image_id AS imageId,
+            u.about_text AS aboutText
+            FROM users u
+                WHERE u.user_id = :userId
+            """, nativeQuery = true)
+    Optional<Object>findPrivateUserByUserId(
+            @Param("userId") UUID userId
+    );
+
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
 

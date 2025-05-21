@@ -1,6 +1,7 @@
 package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.DTO.FollowedCreatorDTO;
+import com.flavor.forge.Model.DTO.PrivateUserDTO;
 import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -29,6 +30,17 @@ public class UserController {
     ) {
         return new ResponseEntity<PublicUserDTO>(
                 userService.findSinglePublicUser(creatorId, userId),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/profile/{user_id}")
+    public ResponseEntity<PrivateUserDTO> findSinglePrivateUser(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        return new ResponseEntity<PrivateUserDTO>(
+                userService.findSinglPrivateUser(userId, accessToken),
                 HttpStatus.OK
         );
     }
@@ -73,7 +85,7 @@ public class UserController {
     public ResponseEntity<User> updateUser(
             @Valid
             @PathVariable(value = "user_id") UUID userId,
-            @RequestParam(value = "user") User user,
+            @RequestBody User user,
             @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<User>(

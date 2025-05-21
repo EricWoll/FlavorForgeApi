@@ -3,10 +3,7 @@ package com.flavor.forge.Service;
 import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
-import com.flavor.forge.Model.DTO.AuthDTO;
-import com.flavor.forge.Model.DTO.FollowedCreatorDTO;
-import com.flavor.forge.Model.DTO.PublicUserDTO;
-import com.flavor.forge.Model.DTO.RecipeWithCreatorDTO;
+import com.flavor.forge.Model.DTO.*;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
@@ -63,6 +60,21 @@ public class UserService {
         });
 
         return sqlQueryObjectMapToPublicUserDTO(user);
+    }
+
+    public PrivateUserDTO findSinglPrivateUser(UUID userId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        Object[] user = (Object[]) userRepo.findPrivateUserByUserId(userId).orElseThrow(() -> {
+            logger.error("User not found with userId of: {}.\"", userId);
+            return new UserNotFoundException("User not found with userId of: " + userId);
+        });
+
+        PrivateUserDTO privateUser = sqlQueryObjectMapToPrivateUserDTO(user);
+
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, privateUser.getUsername());
+
+        return privateUser;
     }
 
     public AuthDTO createUser(User user) {
@@ -277,6 +289,17 @@ public class UserService {
                 .isFollowed(sqlQueryResult.length > 5 ? (Boolean) sqlQueryResult[5] : false)
                 .build();
     }
+    // Mapper Utility for SQL Queries to Private User
+    private PrivateUserDTO sqlQueryObjectMapToPrivateUserDTO(Object[] sqlQueryResult) {
+        return PrivateUserDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .email((String) sqlQueryResult[2])
+                .imageId((String) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .build();
+    }
+
     // Mapper Utility for SQL Queries to Recipes
     private FollowedCreatorDTO sqlQueryObjectMapToFollowedCreatorDTO(Object[] sqlQueryResult) {
         return FollowedCreatorDTO.builder()
