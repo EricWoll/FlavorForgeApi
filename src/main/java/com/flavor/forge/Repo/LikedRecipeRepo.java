@@ -11,21 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface LikedRecipeRecipe extends JpaRepository<LikedRecipe, UUID> {
-
-    @Query(value = """
-            SELECT
-                EXISTS(
-                    SELECT * FROM liked_recipe lr
-                        WHERE
-                            lr.recipe_id = :recipeId
-                            AND lr.user_id = :userId
-                );
-            """, nativeQuery = true)
-    boolean existsLikedRecipeByUserIdAndRecipeId(
-            @Param("recipeId") UUID recipeId,
-            @Param("userId") UUID userId
-    );
+public interface LikedRecipeRepo extends JpaRepository<LikedRecipe, UUID> {
 
     @Query(value = """
             SELECT * FROM liked_recipe lr
@@ -48,7 +34,8 @@ public interface LikedRecipeRecipe extends JpaRepository<LikedRecipe, UUID> {
                    r.ingredients,
                    r.steps,
                    r.likes_count,
-                   r.views_count
+                   r.views_count,
+                   TRUE AS isLiked
             FROM recipe r
             INNER JOIN users c ON r.creator_id = c.user_id
             INNER JOIN liked_recipe lr
@@ -74,7 +61,8 @@ public interface LikedRecipeRecipe extends JpaRepository<LikedRecipe, UUID> {
                    r.ingredients,
                    r.steps,
                    r.likes_count,
-                   r.views_count
+                   r.views_count,
+                   TRUE AS isLiked
             FROM recipe r
             INNER JOIN users c ON r.creator_id = c.user_id
             INNER JOIN liked_recipe lr ON r.recipe_id = lr.recipe_id
@@ -90,4 +78,8 @@ public interface LikedRecipeRecipe extends JpaRepository<LikedRecipe, UUID> {
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
+
+    boolean existsByUser_UserIdAndRecipe_RecipeId(UUID userId, UUID recipeId);
+
+    void deleteById(UUID likedRecipeId);
 }

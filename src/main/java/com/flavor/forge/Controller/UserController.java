@@ -6,6 +6,7 @@ import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.FollowedCreator;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Service.UserService;
+import com.flavor.forge.Utils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,11 +24,17 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    private Utils utils;
+
     @GetMapping("/search/{creator_id}")
     public ResponseEntity<PublicUserDTO> findSingleUser(
             @PathVariable(value = "creator_id") UUID creatorId,
             @RequestParam(value = "user_id", required = false) UUID userId
     ) {
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
+
         return new ResponseEntity<PublicUserDTO>(
                 userService.findSinglePublicUser(creatorId, userId),
                 HttpStatus.OK
@@ -39,6 +46,9 @@ public class UserController {
             @PathVariable(value = "user_id") UUID userId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<PrivateUserDTO>(
                 userService.findSinglPrivateUser(userId, accessToken),
                 HttpStatus.OK
@@ -53,6 +63,9 @@ public class UserController {
             @RequestParam(value = "listOffset", defaultValue = "0") int listOffset,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
 
         List<FollowedCreatorDTO> results;
@@ -74,9 +87,12 @@ public class UserController {
             @RequestParam(value = "creator_id") UUID creatorId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<FollowedCreator>(
                 userService.addFollowedCreator(userId, creatorId, accessToken),
-                HttpStatus.NO_CONTENT
+                HttpStatus.CREATED
         );
     }
 
@@ -88,6 +104,9 @@ public class UserController {
             @RequestBody User user,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<User>(
                 userService.updateUser(userId, user, accessToken),
                 HttpStatus.OK
@@ -100,6 +119,9 @@ public class UserController {
             @PathVariable(value = "user_id") UUID userId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<User>(
                 userService.deleteUser(userId, accessToken),
                 HttpStatus.NO_CONTENT
@@ -112,6 +134,9 @@ public class UserController {
             @RequestParam(value = "creator_id") UUID creatorId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<FollowedCreator>(
                 userService.removeFollowedCreator(userId, creatorId, accessToken),
                 HttpStatus.NO_CONTENT

@@ -11,6 +11,7 @@ import com.flavor.forge.Repo.FollowedCreatorRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -206,31 +207,36 @@ public class UserService {
         return followedCreator;
     }
 
+    @Transactional
     public FollowedCreator removeFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
         jwtService.validateAccessTokenCredentials(accessToken);
 
-        FollowedCreator queuedFollowedItem = followedCreatorRepo.findByUser_UserIdAndCreator_UserId(userId, creatorId).orElseThrow(() -> {
-            logger.error("No Follow data found in database for userId: {}, and creatorId: {}", userId, creatorId);
-            return new UserNotFoundException("No Follow data found in database for userId: " + userId +  ", and creatorId: " + creatorId);
-        });
+        FollowedCreator followedEntry = followedCreatorRepo
+                .findByUser_UserIdAndCreator_UserId(userId, creatorId)
+                .orElseThrow(() -> {
+                    logger.warn("No follow data found for userId: {}, creatorId: {}", userId, creatorId);
+                    return new UserNotFoundException("No follow data found for userId: " + userId + ", creatorId: " + creatorId);
+                });
 
-        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, queuedFollowedItem.getUser().getUsername());
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, followedEntry.getUser().getUsername());
 
-        User creatorQueued = userRepo.findByUserId(creatorId).orElseThrow(() -> new UserNotFoundException("Creator Not Found!"));
+        User creator = userRepo.findByUserId(creatorId)
+                .orElseThrow(() -> new UserNotFoundException("Creator not found for ID: " + creatorId));
 
-        if (creatorQueued.getFollowerCount() > 0) {
-        creatorQueued.setFollowerCount(creatorQueued.getFollowerCount() - 1);
+        if (creator.getFollowerCount() > 0) {
+            creator.setFollowerCount(creator.getFollowerCount() - 1);
         }
 
         try {
             followedCreatorRepo.deleteByUser_UserIdAndCreator_UserId(userId, creatorId);
-            userRepo.save(creatorQueued);
+            userRepo.save(creator);
         } catch (DataAccessException e) {
-            throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
+            throw new DatabaseCRUDException("Database error during unfollow operation: " + e.getMessage(), e);
         }
 
-        return queuedFollowedItem;
+        return followedEntry;
     }
+
 
     private AuthDTO JwToken(User user) {
         String accessToken = jwtService.generateJwtToken(user);

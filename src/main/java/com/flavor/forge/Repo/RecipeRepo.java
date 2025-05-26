@@ -15,23 +15,28 @@ import java.util.UUID;
 public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
 
     @Query(value = """
-                SELECT
-                r.recipe_id AS recipeId,
-               r.creator_id AS creatorId,
-               c.image_id AS creatorImageId,
-               c.username AS creatorUsername,
-               r.recipe_name AS recipeName,
-               r.image_id AS recipeImageId,
-               r.recipe_description AS recipeDescription,
-               r.ingredients AS ingredients,
-               r.steps AS steps,
-               r.likes_count AS likesCount,
-               r.views_count AS viewsCount
-            FROM recipe r
-            INNER JOIN users c ON r.creator_id = c.user_id
-                WHERE r.recipe_id = :recipeId
-            """, nativeQuery = true)
-    Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId);
+    SELECT
+        r.recipe_id AS recipeId,
+        r.creator_id AS creatorId,
+        c.image_id AS creatorImageId,
+        c.username AS creatorUsername,
+        r.recipe_name AS recipeName,
+        r.image_id AS recipeImageId,
+        r.recipe_description AS recipeDescription,
+        r.ingredients AS ingredients,
+        r.steps AS steps,
+        r.likes_count AS likesCount,
+        r.views_count AS viewsCount,
+        CAST(
+            CASE WHEN lr.user_id IS NOT NULL THEN true ELSE false END AS BOOLEAN
+        ) AS isLiked
+    FROM recipe r
+    INNER JOIN users c ON r.creator_id = c.user_id
+    LEFT JOIN liked_recipe lr ON lr.recipe_id = r.recipe_id AND lr.user_id = :userId
+    WHERE r.recipe_id = :recipeId
+""", nativeQuery = true)
+    Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId, @Param("userId") UUID userId);
+
 
     @Query(value = """
     SELECT
@@ -61,17 +66,22 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
                r.ingredients AS ingredients,
                r.steps AS steps,
                r.likes_count AS likesCount,
-               r.views_count AS viewsCount
+               r.views_count AS viewsCount,
+               CAST(
+                    CASE WHEN lr.user_id IS NOT NULL THEN true ELSE false END AS BOOLEAN
+                ) AS isLiked
         FROM recipe r
         INNER JOIN users c ON r.creator_id = c.user_id
+        LEFT JOIN liked_recipe lr ON lr.recipe_id = r.recipe_id AND lr.user_id = :userId
         WHERE (:creatorId IS NULL OR r.creator_id = :creatorId)
         ORDER BY RANDOM()
         LIMIT :limit OFFSET :listOffset
         """, nativeQuery = true)
     List<Object[]> findRandomRecipes(
+            @Param("creatorId") UUID creatorId,
+            @Param("userId") UUID userId,
             @Param("limit") short limit,
-            @Param("listOffset") int listOffset,
-            @Param("creatorId") UUID creatorId
+            @Param("listOffset") int listOffset
     );
 
     @Query(value = """
@@ -85,9 +95,13 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
                r.ingredients AS ingredients,
                r.steps AS steps,
                r.likes_count AS likesCount,
-               r.views_count AS viewsCount
+               r.views_count AS viewsCount,
+               CAST(
+                    CASE WHEN lr.user_id IS NOT NULL THEN true ELSE false END AS BOOLEAN
+                ) AS isLiked
             FROM recipe r
             INNER JOIN users c ON r.creator_id = c.user_id
+            LEFT JOIN liked_recipe lr ON lr.recipe_id = r.recipe_id AND lr.user_id = :userId
                 WHERE (:searchWord IS NULL OR LOWER(r.recipe_name) LIKE LOWER(CONCAT('%', :searchWord, '%')))
                 AND (:ingredientsJson IS NULL OR r.ingredients @> CAST(:ingredientsJson AS jsonb))
                 AND (:creatorId IS NULL OR r.creator_id = :creatorId)
@@ -98,6 +112,7 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
             @Param("searchWord") String searchWord,
             @Param("ingredientsJson") String ingredientsJson,
             @Param("creatorId") UUID creatorId,
+            @Param("userId") UUID userId,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );

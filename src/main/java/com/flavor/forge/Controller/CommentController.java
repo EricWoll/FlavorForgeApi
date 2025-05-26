@@ -2,6 +2,7 @@ package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.Comment;
 import com.flavor.forge.Service.CommentService;
+import com.flavor.forge.Utils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,10 +20,15 @@ public class CommentController {
     @Autowired
     private CommentService commentService;
 
+    private Utils utils;
+
     @GetMapping("/search/{recipe_id}")
     public ResponseEntity<List<Comment>> findCommentsWithRecipe(
             @PathVariable(value = "recipe_id") UUID recipeId
     ) {
+        if (!Utils.validateUUIDs(recipeId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<List<Comment>>(
                 commentService.findCommentsWithRecipe(recipeId),
                 HttpStatus.OK
@@ -50,6 +56,9 @@ public class CommentController {
             @RequestParam(value = "comment") Comment commentBody,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(commentId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<Comment>(
                 commentService.updateComment(commentId, commentBody, accessToken),
                 HttpStatus.OK
@@ -62,6 +71,9 @@ public class CommentController {
             @PathVariable(value = "comment_id") UUID commentId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
+        if (!Utils.validateUUIDs(commentId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<Comment>(
                 commentService.deleteComment(commentId, accessToken),
                 HttpStatus.NO_CONTENT

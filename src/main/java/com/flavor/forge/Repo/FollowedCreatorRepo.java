@@ -56,6 +56,5 @@ public interface FollowedCreatorRepo extends JpaRepository<FollowedCreator, UUID
 
     boolean existsByUser_UserIdAndCreator_UserId(UUID userId, UUID creatorId);
 
-    void deleteByFollowedId(UUID followedId);
     void deleteByUser_UserIdAndCreator_UserId(UUID userId, UUID creatorId);
 }

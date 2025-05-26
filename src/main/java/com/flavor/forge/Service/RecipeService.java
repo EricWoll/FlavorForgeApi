@@ -11,7 +11,7 @@ import com.flavor.forge.Model.Ingredient;
 import com.flavor.forge.Model.LikedRecipe;
 import com.flavor.forge.Model.Recipe;
 import com.flavor.forge.Model.User;
-import com.flavor.forge.Repo.LikedRecipeRecipe;
+import com.flavor.forge.Repo.LikedRecipeRepo;
 import com.flavor.forge.Repo.RecipeRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +39,7 @@ public class RecipeService {
     private UserRepo userRepo;
 
     @Autowired
-    private LikedRecipeRecipe likedRecipeRepo;
+    private LikedRecipeRepo likedRecipeRepo;
 
     @Autowired
     private JwtService jwtService;
@@ -49,26 +50,21 @@ public class RecipeService {
     @Value("${forge.app.noImage}")
     private String noImageId;
 
-    public RecipeWithCreatorDTO findByRecipeId(UUID recipeId) {
-        Object[] recipe = (Object[]) recipeRepo.findByRecipeIdWithCreator(recipeId).orElseThrow(
+    public RecipeWithCreatorDTO findByRecipeId(UUID recipeId, UUID userId) {
+        Object[] recipe = (Object[]) recipeRepo.findByRecipeIdWithCreator(recipeId, userId).orElseThrow(
                 () -> new RecipeNotFoundException("No recipe with the Id of: " + recipeId + " was found")
         );
         return sqlQueryObjectMapToRecipeWithCreatorDTO(recipe);
     }
 
-    public List<RecipeWithCreatorDTO> defaultSearch(int listOffset, UUID creatorId) {
-        List<Object[]> recipeList = recipeRepo.findRandomRecipes(searchLimit, listOffset, creatorId);
-
-        if (recipeList.isEmpty()) {
-            logger.error("No Recipes Were Found in the Database!");
-            throw new RecipeNotFoundException("No Recipes were found!");
-        }
+    public List<RecipeWithCreatorDTO> defaultSearch(UUID creatorId, UUID userId, int listOffset) {
+        List<Object[]> recipeList = recipeRepo.findRandomRecipes(creatorId, userId, searchLimit, listOffset);
 
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
 
 
-    public List<RecipeWithCreatorDTO> searchWithSearchWordAndIngredients(String searchWord, List<Ingredient> ingredients, UUID creatorId, int listOffset) {
+    public List<RecipeWithCreatorDTO> searchWithSearchWordAndIngredients(String searchWord, List<Ingredient> ingredients, UUID creatorId, UUID userId, int listOffset) {
         String filterIngredientsJson = null;
 
         if (ingredients != null && !ingredients.isEmpty()) {
@@ -86,12 +82,8 @@ public class RecipeService {
             }
         }
 
-        List<Object[]> recipeList = recipeRepo.findRecipesWithSearchWordAndIngredients(searchWord, filterIngredientsJson, creatorId, searchLimit, listOffset);
+        List<Object[]> recipeList = recipeRepo.findRecipesWithSearchWordAndIngredients(searchWord, filterIngredientsJson, creatorId, userId, searchLimit, listOffset);
 
-        if (recipeList.isEmpty()) {
-            logger.error("No Recipes with the title: {} were found!", searchWord);
-            throw new RecipeNotFoundException("No Recipes with the title: " + searchWord +" were found!");
-        }
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
 
@@ -101,11 +93,6 @@ public class RecipeService {
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
         List<Object[]> recipeList = likedRecipeRepo.findLikedRecipesRandom(userId, searchLimit, listOffset);
-
-        if (recipeList.isEmpty()) {
-            logger.error("No Recipes were found!");
-            throw new RecipeNotFoundException("No Recipes were found!");
-        }
 
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
@@ -131,11 +118,6 @@ public class RecipeService {
         List<Object[]> recipeList = likedRecipeRepo.findLikedRecipesWithSearchWordAndFilters(
                 userId, searchWord, ingredientNames, searchLimit, listOffset
         );
-
-        if (recipeList.isEmpty()) {
-            logger.error("No Liked Recipes were found!");
-            throw new RecipeNotFoundException("No Liked Recipes were found!");
-        }
 
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
@@ -194,6 +176,7 @@ public class RecipeService {
         return foundRecipe;
     }
 
+    @Transactional
     public Recipe deleteRecipeById(UUID recipeId, String accessToken) {
         jwtService.validateAccessTokenCredentials(accessToken);
 
@@ -213,7 +196,7 @@ public class RecipeService {
         jwtService.validateAccessTokenCredentials(accessToken);
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
-        if (likedRecipeRepo.existsLikedRecipeByUserIdAndRecipeId(recipeId, userId)) {
+        if (likedRecipeRepo.existsByUser_UserIdAndRecipe_RecipeId(recipeId, userId)) {
             throw new RecipeExistsException("Recipe has already been liked by user with id of: " + userId);
         };
 
@@ -223,6 +206,7 @@ public class RecipeService {
         return likedRecipeRepo.save(new LikedRecipe(foundUser, foundRecipe));
     }
 
+
     public LikedRecipe removeLikedRecipe(UUID userId, UUID recipeId, String accessToken) {
         jwtService.validateAccessTokenCredentials(accessToken);
         jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
@@ -231,7 +215,7 @@ public class RecipeService {
                 () -> new RecipeExistsException("Recipe has NOT been liked by user with id of: " + userId)
         );
 
-        likedRecipeRepo.deleteById(userId);
+        likedRecipeRepo.deleteById(foundLikedRecipe.getLikedId());
         return foundLikedRecipe;
     }
 
