@@ -43,7 +43,6 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = normalizePath(request.getRequestURI());
-        System.out.println("Path Type: " + path);
         String matchedPolicyKey = findMatchingPolicyKey(path);
 
         if (matchedPolicyKey == null) {
@@ -87,8 +86,6 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
             }
         }
 
-        System.out.printf("Resolved userType=%s, userId=%s%n", userType, userId);
-
 
         // Get per-path, per-userType rate limit config
         Supplier<BucketConfiguration> configSupplier = userPolicies.get(userType);
@@ -96,7 +93,6 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
         String bucketKey = String.format("rate:%s:%s:%s", path, userType,  userId);
 
         if (configSupplier == null) {
-            System.out.println("No config found for userType: " + userType);
             filterChain.doFilter(request, response);
             return;
         }
@@ -104,8 +100,6 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
         Bucket bucket = proxyManager.builder().build(bucketKey, configSupplier);
 
         if (bucket.tryConsume(1)) {
-            System.out.println("TryConsume result: true");
-            System.out.println("Bucket Amount: " + bucket.getAvailableTokens());
             filterChain.doFilter(request, response);
         } else {
             response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(), "Too many requests");
