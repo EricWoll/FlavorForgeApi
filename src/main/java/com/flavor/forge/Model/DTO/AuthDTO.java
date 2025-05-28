@@ -1,17 +1,20 @@
-package com.flavor.forge.Model;
+package com.flavor.forge.Model.DTO;
 
+import com.flavor.forge.Model.ERole;
 import lombok.*;
+
+import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class AuthResponse {
+public class AuthDTO {
     private String accessToken;
     private String refreshToken;
     private String username;
+    private UUID userId;
     private String email;
-    private String userId;
     private ERole role;
     private String imageId;
 }

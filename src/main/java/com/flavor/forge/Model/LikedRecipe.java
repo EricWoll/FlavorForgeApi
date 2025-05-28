@@ -1,21 +1,40 @@
 package com.flavor.forge.Model;
 
+import jakarta.persistence.*;
 import lombok.Data;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.UUID;
 
 @Data
-@Document(collection = "liked_recipe")
+@Entity
+@Table(name = "liked_recipe", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "recipe_id"})
+})
+@NoArgsConstructor
 public class LikedRecipe {
 
-    @MongoId
-    private ObjectId id;
-    private String userId;
-    private String recipeId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "liked_id")
+    private UUID likedId;
 
-    public LikedRecipe(String userId, String recipeId) {
-        this.userId = userId;
-        this.recipeId = recipeId;
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "recipe_id", nullable = false)
+    private Recipe recipe;
+
+    public LikedRecipe(User user, Recipe recipe) {
+        this.user = user;
+        this.recipe = recipe;
     }
 }

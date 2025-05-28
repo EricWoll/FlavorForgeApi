@@ -8,7 +8,8 @@ import java.util.List;
 
 @Getter
 public enum ERole {
-    FREE("FREE");
+    FREE("FREE"),
+    ANON("ANON");
 
     private final String role;
 

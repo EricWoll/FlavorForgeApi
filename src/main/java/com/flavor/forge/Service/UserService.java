@@ -1,27 +1,22 @@
 package com.flavor.forge.Service;
 
+import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Exception.CustomExceptions.UserExistsException;
 import com.flavor.forge.Exception.CustomExceptions.UserNotFoundException;
-import com.flavor.forge.Model.AuthResponse;
+import com.flavor.forge.Model.DTO.*;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Model.FollowedCreator;
-import com.flavor.forge.Model.Response.FollowedCreatorResponse;
-import com.flavor.forge.Model.Response.PublicCreatorResponse;
-import com.flavor.forge.Model.Response.PublicUserResponse;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Repo.FollowedCreatorRepo;
 import com.flavor.forge.Repo.UserRepo;
 import com.flavor.forge.Security.Jwt.JwtService;
-import com.mongodb.client.result.DeleteResult;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.*;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,8 +25,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -42,13 +38,13 @@ public class UserService {
     private UserRepo userRepo;
 
     @Autowired
+    private FollowedCreatorRepo followedCreatorRepo;
+
+    @Autowired
     private JwtService jwtService;
 
-    @Autowired
-    private FollowedCreatorRepo followedRepo;
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+    @Value("${SEARCH_LIMIT}")
+    private short searchLimit;
 
     @Value("${forge.app.noImage}")
     private String noImageId;
@@ -56,144 +52,33 @@ public class UserService {
     @Autowired
     private AuthenticationManager authManager;
 
-    private BCryptPasswordEncoder BcpEncoder =  new BCryptPasswordEncoder(10);
+    private BCryptPasswordEncoder bcpEncoder = new BCryptPasswordEncoder(BCryptPasswordEncoder.BCryptVersion.$2Y, 12);
 
-    public PublicUserResponse findOneByUsername(String username) {
-        User foundUser = userRepo.findByUsername(username)
-                .orElseThrow(()-> {
-                    logger.error("User not found with username of: {}.", username);
-                    return new UserNotFoundException("User Does Not Exist!");
-                });
+    public PublicUserDTO findSinglePublicUser(UUID creatorId, UUID userId) {
+        Object[] user = (Object[]) userRepo.findPublicUserByUserId(creatorId, userId).orElseThrow(() -> {
+            logger.error("User not found with userId of: {}.\"", userId);
+            return new UserNotFoundException("User not found with userId of: " + userId);
+        });
 
-        return PublicUserResponse.builder()
-                .userId(foundUser.getUserId())
-                .username(foundUser.getUsername())
-                .imageId(foundUser.getImageId())
-                .followerCount(foundUser.getFollowerCount())
-                .aboutText(foundUser.getAboutText())
-                .role(foundUser.getRole())
-                .build();
+        return sqlQueryObjectMapToPublicUserDTO(user);
     }
 
-    public User findOneByUsernameToEdit(String username) {
-        return userRepo.findByUsername(username)
-                .orElseThrow(() -> {
-                    logger.error("User not found with username of: {}.", username);
-                    return new UserNotFoundException("User Does Not Exist!");
-                });
+    public PrivateUserDTO findSinglPrivateUser(UUID userId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        Object[] user = (Object[]) userRepo.findPrivateUserByUserId(userId).orElseThrow(() -> {
+            logger.error("User not found with userId of: {}.\"", userId);
+            return new UserNotFoundException("User not found with userId of: " + userId);
+        });
+
+        PrivateUserDTO privateUser = sqlQueryObjectMapToPrivateUserDTO(user);
+
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, privateUser.getUsername());
+
+        return privateUser;
     }
 
-    public PublicUserResponse findOneById(String userId) {
-        User foundUser = userRepo.findByUserId(userId)
-                .orElseThrow(()-> {
-                    logger.error("User not found with id of: {}.", userId);
-                    return new UserNotFoundException("User Does Not Exist!");
-                });
-
-        return PublicUserResponse.builder()
-                .userId(foundUser.getUserId())
-                .username(foundUser.getUsername())
-                .imageId(foundUser.getImageId())
-                .followerCount(foundUser.getFollowerCount())
-                .aboutText(foundUser.getAboutText())
-                .role(foundUser.getRole())
-                .build();
-    }
-
-    // Don't know if this is needed. Leaving for now.
-    public Boolean isCreatorFollowed(String userId, String creatorId) {
-        Criteria criteria = Criteria.where("userId").is(userId)
-                .and("creatorId").is(creatorId);
-
-        Query query = new Query(criteria);
-
-        return mongoTemplate.exists(query, "followed_creator");
-    }
-
-    public List<FollowedCreatorResponse> findFollowedCreatorsByUserId(String userId) {
-        MatchOperation matchOperation = Aggregation.match(Criteria.where("userId").is(userId));
-
-        LookupOperation lookupOperation = Aggregation.lookup(
-                "user",
-                "creatorId",
-                "userId",
-                "creator"
-        );
-
-        UnwindOperation unwindOperation = Aggregation.unwind("creator");
-
-        // Includes specific fields
-        ProjectionOperation projectionOperation = Aggregation.project()
-                .andInclude("creator.userId", "creatorId")
-                .and("creator.username").as("creatorUsername")
-                .and("creator.imageId").as("creatorImage");
-
-        Aggregation aggregation = Aggregation.newAggregation(
-                matchOperation,
-                lookupOperation,
-                unwindOperation,
-                projectionOperation
-        );
-
-        return mongoTemplate.aggregate(aggregation, "followed_creator", FollowedCreatorResponse.class).getMappedResults();
-    }
-
-
-    public FollowedCreator createFollowedCreator(String userId, String creatorId) {
-        if (!userRepo.existsByUserId(userId)) {
-            logger.error("User does not exist with userId of: {}.", userId);
-            throw new UserNotFoundException("User Does Not Exist!");
-        }
-
-        if (!userRepo.existsByUserId(creatorId)) {
-            logger.error("Creator User does not exist with userId of: {}.", creatorId);
-            throw new UserNotFoundException("Creator User Does Not Exist!");
-        }
-
-        return followedRepo.insert(
-                new FollowedCreator(
-                        userId,
-                        creatorId
-                )
-        );
-    }
-
-    public PublicCreatorResponse findCreatorAndIsFollowed(String userId, String creatorId) {
-        boolean isFollowed = isFollowing(userId, creatorId);
-
-        PublicUserResponse user = findOneById(creatorId);
-
-        return PublicCreatorResponse.builder()
-                .creatorId(creatorId)
-                .creatorUsername(user.getUsername())
-                .creatorImageId(user.getImageId())
-                .followerCount(user.getFollowerCount())
-                .creatorAboutText(user.getAboutText())
-                .creatorRole(user.getRole())
-                .isFollowed(isFollowed)
-                .build();
-    }
-
-    public DeleteResult deleteFollowedCreator(String userId, String creatorId) {
-        if (!userRepo.existsByUserId(userId)) {
-            logger.error("User does not exist with userId of: {}.", userId);
-            throw new UserNotFoundException("User Does Not Exist!");
-        }
-
-        if (!userRepo.existsByUserId(creatorId)) {
-            logger.error("Creator User does not exist with userId of: {}.", creatorId);
-            throw new UserNotFoundException("Creator User Does Not Exist!");
-        }
-
-        Criteria criteria = Criteria.where("userId").is(userId)
-                .and("creatorId").is(creatorId);
-
-        Query query = new Query(criteria);
-        return mongoTemplate.remove(query, "followed_creator");
-    }
-
-    public AuthResponse createUser(User user) {
-
+    public AuthDTO createUser(User user) {
         if (userRepo.existsByUsername(user.getUsername())) {
             logger.error("User already exists with username of: {}.", user.getUsername());
             throw new UserExistsException("Username Already Exists!");
@@ -207,27 +92,30 @@ public class UserService {
             user.setImageId(noImageId);
         }
 
-        User createdUser = userRepo.insert(
+        User createdUser = userRepo.save(
                 new User(
                         user.getUsername(),
                         user.getEmail(),
-                        BcpEncoder.encode(user.getPassword()),
+                        bcpEncoder.encode(user.getPassword()),
                         user.getImageId(),
                         0,
                         "",
                         ERole.FREE
                 )
         );
-
-        return JwtToken(createdUser);
+        return JwToken(createdUser);
     }
 
-    public User updateUser(String username, User user) {
-        User foundUser = userRepo.findByUsername(username)
+    public User updateUser(UUID userId, User user, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(() -> {
-                    logger.error("User with username of \"{}\" is missing some content and cannot be updated!", username);
-                    return new UserNotFoundException("User Does Not Exist!");
+                    logger.error("User with userId of \"{}\" is missing some content and cannot be updated!", userId);
+                    return new UserNotFoundException("Some User information is missing!");
                 });
+
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, foundUser.getUsername());
 
         foundUser.setUsername(user.getUsername());
         foundUser.setEmail(user.getEmail());
@@ -238,25 +126,22 @@ public class UserService {
         return foundUser;
     }
 
-    public User deleteUser(User user, String username) {
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        username,
-                        user.getPassword()
-                )
-        );
+    public User deleteUser(UUID userId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-        User foundUser = userRepo.findByUsername(username)
+        User foundUser = userRepo.findByUserId(userId)
                 .orElseThrow(()-> {
-                    logger.error("User does not exists with username of \"{}\" and cannot be updated!", username);
+                    logger.error("User does not exists with userId of \"{}\" and cannot be updated!", userId);
                     return new UserNotFoundException("User Does Not Exist!");
                 });
 
-        userRepo.deleteByUsername(foundUser.getUsername());
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, foundUser.getUsername());
+
+        userRepo.deleteByUserId(userId);
         return foundUser;
     }
 
-    public AuthResponse login(User user) {
+    public AuthDTO login(User user) {
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getUsername(),
@@ -270,15 +155,94 @@ public class UserService {
                     return new UserNotFoundException("User Was not Found!");
                 });
 
-        return JwtToken(foundUser);
-
+        return JwToken(foundUser);
     }
 
-    private AuthResponse JwtToken(User user) {
+    public List<FollowedCreatorDTO> findFollowedCreators(UUID userId, String accessToken, int listOffset) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        List<Object[]> creatorList = followedCreatorRepo.findAllByUserId(userId, searchLimit, listOffset);
+
+        return creatorList.stream().map(this::sqlQueryObjectMapToFollowedCreatorDTO).toList();
+    }
+
+    public List<FollowedCreatorDTO> findFollowedCreatorsWithSearch(UUID userId, String searchString, String accessToken, int listOffset) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+
+        List<Object[]> creatorList = followedCreatorRepo.searchWithString(userId, searchString, searchLimit, listOffset);
+
+        return creatorList.stream().map(this::sqlQueryObjectMapToFollowedCreatorDTO).toList();
+    }
+
+    public FollowedCreator addFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        if (followedCreatorRepo.existsByUser_UserIdAndCreator_UserId(userId, creatorId)) {
+            throw new UserExistsException("User has already Followed the creator!");
+        }
+
+        User userQueued = userRepo.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User Not Found!"));
+
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, userQueued.getUsername());
+
+        User creatorQueued = userRepo.findByUserId(creatorId).orElseThrow(() -> new UserNotFoundException("Creator Not Found!"));
+
+        creatorQueued.setFollowerCount(creatorQueued.getFollowerCount() + 1);
+
+        FollowedCreator followedCreator;
+
+        try {
+            followedCreator = followedCreatorRepo.save(
+                    new FollowedCreator(userQueued, creatorQueued));
+            userRepo.save(creatorQueued);
+
+        } catch (DataAccessException e) {
+            throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
+        }
+
+        return followedCreator;
+    }
+
+    @Transactional
+    public FollowedCreator removeFollowedCreator(UUID userId, UUID creatorId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
+        FollowedCreator followedEntry = followedCreatorRepo
+                .findByUser_UserIdAndCreator_UserId(userId, creatorId)
+                .orElseThrow(() -> {
+                    logger.warn("No follow data found for userId: {}, creatorId: {}", userId, creatorId);
+                    return new UserNotFoundException("No follow data found for userId: " + userId + ", creatorId: " + creatorId);
+                });
+
+        jwtService.validateAccessTokenAgainstFoundUsername(accessToken, followedEntry.getUser().getUsername());
+
+        User creator = userRepo.findByUserId(creatorId)
+                .orElseThrow(() -> new UserNotFoundException("Creator not found for ID: " + creatorId));
+
+        if (creator.getFollowerCount() > 0) {
+            creator.setFollowerCount(creator.getFollowerCount() - 1);
+        }
+
+        try {
+            followedCreatorRepo.deleteByUser_UserIdAndCreator_UserId(userId, creatorId);
+            userRepo.save(creator);
+        } catch (DataAccessException e) {
+            throw new DatabaseCRUDException("Database error during unfollow operation: " + e.getMessage(), e);
+        }
+
+        return followedEntry;
+    }
+
+
+    private AuthDTO JwToken(User user) {
         String accessToken = jwtService.generateJwtToken(user);
         String refreshToken = jwtService.generateJwtRefreshToken(user);
 
-        return AuthResponse.builder()
+        return AuthDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .username(user.getUsername())
@@ -289,7 +253,7 @@ public class UserService {
                 .build();
     }
 
-    public AuthResponse refreshJwtToken(
+    public AuthDTO refreshJwToken(
             HttpServletRequest request
     ) {
         String authHeader = request.getHeader("Authorization");
@@ -307,7 +271,7 @@ public class UserService {
 
                 String accessToken = jwtService.generateJwtToken(user);
 
-                return AuthResponse.builder()
+                return AuthDTO.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
                         .username(user.getUsername())
@@ -320,8 +284,38 @@ public class UserService {
         return null;
     }
 
-    public boolean isFollowing(String currentUserId, String creatorId) {
-        Optional<FollowedCreator> follow = followedRepo.findByUserIdAndCreatorId(currentUserId, creatorId);
-        return follow.isPresent();
+    // Mapper Utility for SQL Queries to User
+    private PublicUserDTO sqlQueryObjectMapToPublicUserDTO(Object[] sqlQueryResult) {
+        return PublicUserDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .imageId((String) sqlQueryResult[2])
+                .followerCount((Integer) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .isFollowed(sqlQueryResult.length > 5 ? (Boolean) sqlQueryResult[5] : false)
+                .build();
     }
+    // Mapper Utility for SQL Queries to Private User
+    private PrivateUserDTO sqlQueryObjectMapToPrivateUserDTO(Object[] sqlQueryResult) {
+        return PrivateUserDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .email((String) sqlQueryResult[2])
+                .imageId((String) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .build();
+    }
+
+    // Mapper Utility for SQL Queries to Recipes
+    private FollowedCreatorDTO sqlQueryObjectMapToFollowedCreatorDTO(Object[] sqlQueryResult) {
+        return FollowedCreatorDTO.builder()
+                .userId((UUID) sqlQueryResult[0])
+                .username((String) sqlQueryResult[1])
+                .imageId((String) sqlQueryResult[2])
+                .followerCount((Integer) sqlQueryResult[3])
+                .aboutText((String) sqlQueryResult[4])
+                .isFollowed(true)
+                .build();
+    }
+
 }

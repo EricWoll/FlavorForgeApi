@@ -2,14 +2,18 @@ package com.flavor.forge.Service;
 
 import com.flavor.forge.Exception.CustomExceptions.CommentEmptyException;
 import com.flavor.forge.Exception.CustomExceptions.CommentNotFoundException;
+import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Model.Comment;
 import com.flavor.forge.Repo.CommentRepo;
+import com.flavor.forge.Security.Jwt.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CommentService {
@@ -19,23 +23,18 @@ public class CommentService {
     @Autowired
     private CommentRepo commentRepo;
 
-    public Comment findOneById(String id) {
-        return commentRepo.findByCommentId(id)
-                .orElseThrow(() -> {
-                    logger.error("No comment found with id of: {}", id);
-                    return new CommentNotFoundException("Comment Not Found for Id: " + id);
-                });
+    @Autowired
+    private JwtService jwtService;
+
+    public List<Comment> findCommentsWithRecipe(UUID recipeId) {
+        return commentRepo.findAllByAttachedId(recipeId);
     }
 
-    public List<Comment> findAllByAttachedId(String id) {
-        return commentRepo.findAllByAttachedId(id);
-    }
+    public Comment createComment(Comment comment, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-    public List<Comment> findAllByUserId(String id) {
-        return commentRepo.findAllByUserId(id);
-    }
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, comment.getUserId());
 
-    public Comment createComment(Comment comment) {
         if (
                 comment.getCommentText() == null || comment.getCommentText().isEmpty()
                         || comment.getUserId() == null || comment.getAttachedId() == null
@@ -43,45 +42,72 @@ public class CommentService {
             logger.error("Comment is missing some content and cannot be created!");
             throw new CommentEmptyException("Comment Is Missing Some Content!");
         }
-
-        return commentRepo.insert(
-                new Comment(
-                        comment.getUserId(),
-                        comment.getAttachedId(),
-                        comment.getCommentText()
-                )
-        );
+        try {
+            return commentRepo.save(
+                    new Comment(
+                            comment.getUserId(),
+                            comment.getAttachedId(),
+                            comment.getCommentText()
+                    )
+            );
+        }  catch (DataAccessException e) {
+            logger.error("Database error during data creation: \"{}\"", e.getMessage());
+            throw new DatabaseCRUDException("Database error during data creation: " + e.getMessage());
+        }
     }
 
-    public Comment updateComment(String id, Comment comment) {
+    public Comment updateComment(UUID commentId, Comment commentBody, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
+
         if (
-                comment.getCommentText() == null || comment.getCommentText().isEmpty()
-                        || comment.getUserId() == null || comment.getAttachedId() == null
+                commentBody.getCommentText() == null || commentBody.getCommentText().isEmpty()
+                        || commentBody.getUserId() == null || commentBody.getAttachedId() == null
         ){
-            logger.error("Comment with Id of \"{}\" is missing some content and cannot be updated!", id);
+            logger.error("Comment with Id of \"{}\" is missing some content and cannot be updated!", commentId);
             throw new CommentEmptyException("Comment Is Missing Some Content!!");
         }
 
-        Comment foundComment = commentRepo.findByCommentId(id)
+        Comment foundComment = commentRepo.findByCommentId(commentId)
                 .orElseThrow(() -> {
-                    logger.error("Comment does not exists with Id of \"{}\" and cannot be updated!", id);
-                    return new CommentNotFoundException("Comment Not Found With Id Of: " + id);
+                    logger.error("Comment does not exists with Id of \"{}\" and cannot be updated!", commentId);
+                    return new CommentNotFoundException("Comment Not Found With Id Of: " + commentId);
                 });
 
-        foundComment.setCommentText(comment.getCommentText());
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
 
-        commentRepo.save(foundComment);
+        foundComment.setCommentText(commentBody.getCommentText());
+
+        try {
+            commentRepo.save(foundComment);
+        } catch (DataAccessException e) {
+            logger.error("Database error during data update: \"{}\"", e.getMessage());
+            throw new DatabaseCRUDException("Database error during data update: " + e.getMessage());
+        }
+
         return foundComment;
     }
 
-    public Comment deleteCommentById(String id) {
-        Comment comment = commentRepo.findByCommentId(id)
-                .orElseThrow(() -> {
-                    logger.error("Comment does not exists with Id of \"{}\" and cannot be deleted!", id);
-                    return new CommentNotFoundException("Comment Not Found for Id: " + id);
-                });
+    public Comment deleteComment(UUID commentId, String accessToken) {
+        jwtService.validateAccessTokenCredentials(accessToken);
 
-        commentRepo.deleteByCommentId(id);
-        return comment;
+        Comment foundComment = commentRepo.findByCommentId(commentId).orElseThrow(()-> {
+            logger.error("Comment does not exists with Id of \"{}\" and cannot be deleted!", commentId);
+            return new CommentNotFoundException("Comment Not Found for Id: " + commentId);
+        });
+
+        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
+
+        try {
+            commentRepo.deleteByCommentId(foundComment.getCommentId());
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid comment ID: \"{}\"", e.getMessage());
+            throw new IllegalArgumentException("Invalid comment ID: " + e.getMessage());
+
+        } catch (DataAccessException e) {
+            logger.error("Database error during data deletion: \"{}\"", e.getMessage());
+            throw new DatabaseCRUDException("Database error during data deletion: " + e.getMessage());
+        }
+
+        return foundComment;
     }
 }

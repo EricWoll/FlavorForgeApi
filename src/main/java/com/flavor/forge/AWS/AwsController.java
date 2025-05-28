@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/v1/images")
+@RequestMapping("/api/v2/images")
 public class AwsController {
     @Autowired
     private AwsService awsService;
@@ -27,7 +27,7 @@ public class AwsController {
         return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
     }
 
-    @PostMapping
+    @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("image") MultipartFile file,
             @RequestParam("objectKey") String objectKey,
@@ -52,7 +52,7 @@ public class AwsController {
         }
     }
 
-    @DeleteMapping("/{fileName}")
+    @DeleteMapping("/delete/{fileName}")
     public ResponseEntity<?> deleteFile (@PathVariable String fileName) throws IOException {
         awsService.deleteFileFromS3(fileName);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

@@ -2,70 +2,80 @@ package com.flavor.forge.Controller;
 
 import com.flavor.forge.Model.Comment;
 import com.flavor.forge.Service.CommentService;
+import com.flavor.forge.Utils;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@RestController
-@RequestMapping("/api/v1/comments")
+@Controller
+@RequestMapping("api/v2/comments")
 public class CommentController {
 
     @Autowired
     private CommentService commentService;
 
-    @GetMapping("/{comment_id}")
-    public ResponseEntity<Comment> findSingleComment(@PathVariable String comment_id) {
-        return new ResponseEntity<Comment>(
-                commentService.findOneById(comment_id),
-                HttpStatus.OK
-        );
-    }
+    private Utils utils;
 
-    @GetMapping("/attached/{attached_id}")
-    public ResponseEntity<List<Comment>> findAllCommentsByAttached(@PathVariable String attached_id) {
+    @GetMapping("/search/{recipe_id}")
+    public ResponseEntity<List<Comment>> findCommentsWithRecipe(
+            @PathVariable(value = "recipe_id") UUID recipeId
+    ) {
+        if (!Utils.validateUUIDs(recipeId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<List<Comment>>(
-                commentService.findAllByAttachedId(attached_id),
+                commentService.findCommentsWithRecipe(recipeId),
                 HttpStatus.OK
         );
     }
 
-    @GetMapping("/users/{user_id}")
-    public ResponseEntity<List<Comment>> findAllCommentsByUser(@PathVariable String user_id) {
-        return new ResponseEntity<List<Comment>>(
-                commentService.findAllByUserId(user_id),
-                HttpStatus.OK
-        );
-    }
 
-    @PostMapping
-    public ResponseEntity<Comment> createComment(@RequestBody Comment payload) {
-        return new ResponseEntity<Comment>(
-                commentService.createComment(payload),
-                HttpStatus.CREATED
-        );
-    }
-
-    @PutMapping("/{comment_id}")
-    public ResponseEntity<Comment> updateComment(
-            @PathVariable String comment_id,
-            @RequestBody Comment payload
+    @PostMapping("/create")
+    public ResponseEntity<Comment> createComment(
+            @Valid
+            @RequestParam(value = "comment") Comment comment,
+            @RequestHeader (name="Authorization") String accessToken
     ) {
         return new ResponseEntity<Comment>(
-                commentService.updateComment(
-                        comment_id,
-                        payload
-                ),
-                HttpStatus.CREATED
+                commentService.createComment(comment, accessToken),
+                HttpStatus.OK
         );
     }
 
-    @DeleteMapping("/{comment_id}")
-    public ResponseEntity<Comment> deleteComment(@PathVariable String comment_id) {
+
+    @PutMapping("/update/{comment_id}")
+    public ResponseEntity<Comment> updateComment(
+            @Valid
+            @PathVariable(value = "comment_id") UUID commentId,
+            @RequestParam(value = "comment") Comment commentBody,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(commentId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<Comment>(
-                commentService.deleteCommentById(comment_id),
+                commentService.updateComment(commentId, commentBody, accessToken),
+                HttpStatus.OK
+        );
+    }
+
+
+    @DeleteMapping("/delete/{comment_id}")
+    public ResponseEntity<Comment> deleteComment(
+            @PathVariable(value = "comment_id") UUID commentId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(commentId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return new ResponseEntity<Comment>(
+                commentService.deleteComment(commentId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }

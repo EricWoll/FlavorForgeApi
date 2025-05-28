@@ -1,105 +1,147 @@
 package com.flavor.forge.Controller;
 
+import com.flavor.forge.Model.DTO.FollowedCreatorDTO;
+import com.flavor.forge.Model.DTO.PrivateUserDTO;
+import com.flavor.forge.Model.DTO.PublicUserDTO;
 import com.flavor.forge.Model.FollowedCreator;
-import com.flavor.forge.Model.Response.FollowedCreatorResponse;
-import com.flavor.forge.Model.Response.PublicCreatorResponse;
 import com.flavor.forge.Model.User;
-import com.flavor.forge.Model.Response.PublicUserResponse;
 import com.flavor.forge.Service.UserService;
-import com.mongodb.client.result.DeleteResult;
+import com.flavor.forge.Utils;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
-@RestController
-@RequestMapping("/api/v1/users")
+@Controller
+@RequestMapping("api/v2/users")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping("/{username}")
-    public ResponseEntity<PublicUserResponse> findSingleUser(@PathVariable String username) {
-        return new ResponseEntity<PublicUserResponse>(
-                userService.findOneByUsername(username),
-                HttpStatus.OK
-        );
-    }
+    private Utils utils;
 
-    @GetMapping("/id/{user_id}")
-    public ResponseEntity<PublicUserResponse> findSingleUserById(@PathVariable String user_id) {
-        return new ResponseEntity<PublicUserResponse>(
-                userService.findOneById(user_id),
-                HttpStatus.OK
-        );
-    }
-
-    @GetMapping("/edit/{username}")
-    public ResponseEntity<User> findSingleUserToEdit(@PathVariable String username) {
-        return new ResponseEntity<User>(
-                userService.findOneByUsernameToEdit(username),
-                HttpStatus.OK
-        );
-    }
-
-    @GetMapping("/creator/{creator_id}")
-    public ResponseEntity<PublicCreatorResponse> findCreatorAndIsFollowed(
-            @PathVariable String creator_id,
-            @RequestParam("user_id") String user_id
+    @GetMapping("/search/{creator_id}")
+    public ResponseEntity<PublicUserDTO> findSingleUser(
+            @PathVariable(value = "creator_id") UUID creatorId,
+            @RequestParam(value = "user_id", required = false) UUID userId
     ) {
-        return new ResponseEntity<PublicCreatorResponse>(
-                userService.findCreatorAndIsFollowed(user_id, creator_id),
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return new ResponseEntity<PublicUserDTO>(
+                userService.findSinglePublicUser(creatorId, userId),
                 HttpStatus.OK
         );
     }
 
-    @GetMapping("/followed/{user_id}")
-    public ResponseEntity<List<FollowedCreatorResponse>> findFollowedCreatorsByUserId(@PathVariable String user_id) {
-        return new ResponseEntity<List<FollowedCreatorResponse>>(
-                userService.findFollowedCreatorsByUserId(user_id),
+    @GetMapping("/profile/{user_id}")
+    public ResponseEntity<PrivateUserDTO> findSinglePrivateUser(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return new ResponseEntity<PrivateUserDTO>(
+                userService.findSinglPrivateUser(userId, accessToken),
                 HttpStatus.OK
         );
     }
 
-    @PutMapping("/{username}")
-    public ResponseEntity<User> updateUser (@PathVariable String username, @RequestBody User payload) {
-        return new ResponseEntity<User>(
-                userService.updateUser(username, payload),
+
+    @GetMapping("/followed/search/{user_id}")
+    public ResponseEntity<List<FollowedCreatorDTO>> findFollowedCreators(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "search_string", required = false) String searchString,
+            @RequestParam(value = "listOffset", defaultValue = "0") int listOffset,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        boolean hasSearchString = searchString != null && !searchString.isEmpty();
+
+        List<FollowedCreatorDTO> results;
+
+        if (hasSearchString) {
+            results = userService.findFollowedCreatorsWithSearch(userId, searchString, accessToken, listOffset);
+        } else {
+            results = userService.findFollowedCreators(userId, accessToken, listOffset);
+        }
+
+        return ResponseEntity.ok(results);
+    }
+
+
+    @PostMapping("/followed/add/{user_id}")
+    public ResponseEntity<FollowedCreator> addFollowedCreator(
+            @Valid
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "creator_id") UUID creatorId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return new ResponseEntity<FollowedCreator>(
+                userService.addFollowedCreator(userId, creatorId, accessToken),
                 HttpStatus.CREATED
         );
     }
 
-    @PostMapping("/followed")
-    public ResponseEntity<FollowedCreator> createFollowedCreator (
-            @RequestParam("user_id") String user_id,
-            @RequestParam("creator_id") String creator_id
-        ) {
-        return new ResponseEntity<FollowedCreator>(
-                userService.createFollowedCreator(user_id, creator_id),
+
+    @PutMapping("/update/{user_id}")
+    public ResponseEntity<User> updateUser(
+            @Valid
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestBody User user,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return new ResponseEntity<User>(
+                userService.updateUser(userId, user, accessToken),
                 HttpStatus.OK
         );
     }
 
-    @DeleteMapping("/{username}")
-    public ResponseEntity<User> deleteUser(@PathVariable String username, @RequestBody User payload) {
+
+    @DeleteMapping("/delete/{user_id}")
+    public ResponseEntity<User> deleteUser(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId)) {
+            return ResponseEntity.badRequest().build();
+        }
         return new ResponseEntity<User>(
-                userService.deleteUser(payload, username),
+                userService.deleteUser(userId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }
 
-    @DeleteMapping("/followed")
-    public ResponseEntity<DeleteResult> deleteFollow(
-            @RequestParam("user_id") String user_id,
-            @RequestParam("creator_id") String creator_id
-            ) {
-        return new ResponseEntity<DeleteResult>(
-                userService.deleteFollowedCreator(user_id, creator_id),
+    @DeleteMapping("/followed/delete/{user_id}")
+    public ResponseEntity<FollowedCreator> removeFollowedCreator(
+            @PathVariable(value = "user_id") UUID userId,
+            @RequestParam(value = "creator_id") UUID creatorId,
+            @RequestHeader (name="Authorization") String accessToken
+    ) {
+        if (!Utils.validateUUIDs(userId, creatorId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return new ResponseEntity<FollowedCreator>(
+                userService.removeFollowedCreator(userId, creatorId, accessToken),
                 HttpStatus.NO_CONTENT
         );
     }
+
 
 }

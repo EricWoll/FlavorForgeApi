@@ -1,25 +1,40 @@
 package com.flavor.forge.Model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Data
-@Document(collection = "comment")
+@Entity
+@Table(name = "comment")
+@NoArgsConstructor
 public class Comment {
 
-    @MongoId
-    private ObjectId id;
-    private String commentId;
-    private String userId;
-    private String attachedId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "comment_id")
+    private UUID commentId;
+
+    @NotNull
+    @Column(name = "user_id")
+    private UUID userId;
+
+    @NotNull
+    @Column(name = "attached_id")
+    private UUID attachedId;
+
+    @NotNull
+    @NotEmpty
+    @Size(min = 1, message = "Comment must have text!")
+    @Column(name = "comment_text")
     private String commentText;
 
-    public Comment(String userId, String attachedId, String commentText) {
-        this.commentId = UUID.randomUUID().toString();
+    public Comment(UUID userId, UUID attachedId, String commentText) {
         this.userId = userId;
         this.attachedId = attachedId;
         this.commentText = commentText;

@@ -1,6 +1,5 @@
 package com.flavor.forge.AWS;
 
-import com.flavor.forge.Service.RecipeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,7 @@ public class AwsService {
     @Value("${forge.app.noImage}")
     private String emptyImage;
 
-    private Logger logger = LoggerFactory.getLogger(RecipeService.class);
+//    private Logger logger = LoggerFactory.getLogger(RecipeService.class);
 
     public List<S3Object> listObjects() {
         ListObjectsV2Response response = s3Client.listObjectsV2(builder -> builder.bucket(bucketName));
@@ -64,7 +63,8 @@ public class AwsService {
         try {
             s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         } catch (Exception e) {
-            logger.error("There was an Error with uploading the Image File!");
+//            logger.error("There was an Error with uploading the Image File!");
+
         }
 
 

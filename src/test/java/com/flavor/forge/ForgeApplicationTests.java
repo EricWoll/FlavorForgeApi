@@ -2,7 +2,6 @@ package com.flavor.forge;
 
 import com.flavor.forge.Service.CommentService;
 import com.flavor.forge.Service.RecipeService;
-import com.flavor.forge.Service.SearchService;
 import com.flavor.forge.Service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +17,6 @@ class ForgeApplicationTests {
 	@Autowired
 	private RecipeService recipeService;
 	@Autowired
-	private SearchService searchService;
-	@Autowired
 	private UserService userService;
 
 	@Test
@@ -31,11 +28,7 @@ class ForgeApplicationTests {
 		assertThat(recipeService).isNotNull();
 	}
 	@Test
-	void searchServiceLoads() throws Exception {
-		assertThat(searchService).isNotNull();
-	}
-	@Test
-	void userSericeLoads() throws Exception {
+	void userServiceLoads() throws Exception {
 		assertThat(userService).isNotNull();
 	}
 
