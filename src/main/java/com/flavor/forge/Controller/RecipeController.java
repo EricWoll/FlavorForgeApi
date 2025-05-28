@@ -67,7 +67,7 @@ public class RecipeController {
     }
 
 
-    @GetMapping("/liked/{user_id}")
+    @GetMapping("/liked/search/{user_id}")
     public ResponseEntity<List<RecipeWithCreatorDTO>> searchLikedRecipes (
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "filters", required = false) List<Ingredient> filters,
@@ -104,7 +104,7 @@ public class RecipeController {
         );
     }
 
-    @PostMapping("/liked/{user_id}")
+    @PostMapping("/liked/add/{user_id}")
     public ResponseEntity<LikedRecipe> addLikedRecipe(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "recipe_id") UUID recipeId,
@@ -151,7 +151,7 @@ public class RecipeController {
         );
     }
 
-    @DeleteMapping("/liked/{user_id}")
+    @DeleteMapping("/liked/delete/{user_id}")
     public ResponseEntity<LikedRecipe> removeLikedRecipe(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "recipe_id") UUID recipeId,

@@ -3,6 +3,8 @@ package com.flavor.forge.Model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class User implements UserDetails {
 
     @Id

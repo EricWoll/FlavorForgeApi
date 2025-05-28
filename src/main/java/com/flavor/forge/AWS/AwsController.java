@@ -27,7 +27,7 @@ public class AwsController {
         return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
     }
 
-    @PostMapping
+    @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("image") MultipartFile file,
             @RequestParam("objectKey") String objectKey,
@@ -52,7 +52,7 @@ public class AwsController {
         }
     }
 
-    @DeleteMapping("/{fileName}")
+    @DeleteMapping("/delete/{fileName}")
     public ResponseEntity<?> deleteFile (@PathVariable String fileName) throws IOException {
         awsService.deleteFileFromS3(fileName);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

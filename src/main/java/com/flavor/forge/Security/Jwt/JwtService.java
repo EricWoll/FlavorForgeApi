@@ -34,24 +34,20 @@ public class JwtService {
     private long jwtRefreshExpireMs;
 
     public String generateJwtToken(User user) {
-        return buildToken(new HashMap<>(), user, jwtExpireMs);
+        return buildToken(user, jwtExpireMs);
     }
 
     public String generateJwtRefreshToken(User user) {
-        return buildToken(new HashMap<>(), user, jwtRefreshExpireMs);
+        return buildToken(user, jwtRefreshExpireMs);
     }
 
-    private String buildToken(Map<String, Object> claims,
-                                 User user,
-                              long expiration
-    ) {
+    private String buildToken(User user, long expiration) {
         return Jwts.builder()
-                .claims()
-                .add(claims)
+                .claim("userId", user.getUserId())
+                .claim("userRole", user.getRole())
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration((new Date(System.currentTimeMillis() + expiration )))
-                .and()
                 .signWith(getKey())
                 .compact();
     }
@@ -85,9 +81,12 @@ public class JwtService {
     }
 
     public String trimJWTBearerToken(String bearerToken) {
-        return bearerToken.startsWith("Bearer ")
-                ? bearerToken.substring(7)
-                : bearerToken;
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        } else if (bearerToken != null && !bearerToken.startsWith("Bearer ")) {
+            return bearerToken;
+        }
+        return null;
     }
 
     public boolean validateAccessTokenCredentials(String bearerToken) {

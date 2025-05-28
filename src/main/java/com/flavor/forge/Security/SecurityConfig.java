@@ -1,6 +1,7 @@
 package com.flavor.forge.Security;
 
 import com.flavor.forge.Model.ERole;
+import com.flavor.forge.Security.Bucket4j.RedisRateLimitBucket4jFilter;
 import com.flavor.forge.Security.Jwt.JwtFilter;
 import com.flavor.forge.Security.Service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
+    @Autowired
+    private RedisRateLimitBucket4jFilter redisBucket4jFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -47,7 +51,6 @@ public class SecurityConfig {
                         // Allow public access to GET
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v2/users/profile/**",
                                 "/api/v2/recipes/search",
                                 "/api/v2/recipes/search/**",
                                 "/api/v2/comments/search/**",
@@ -58,8 +61,9 @@ public class SecurityConfig {
                         // Restrict Access through ROLES to GET
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v2/recipes/liked/**",
-                                "/api/v2/users/search/followed/**"
+                                "/api/v2/users/profile/**",
+                                "/api/v2/recipes/liked/search/**",
+                                "/api/v2/users/followed/search/**"
                         ).hasRole(ERole.FREE.getRole())
 
                         // Restrict Access through ROLES to POST
@@ -68,9 +72,9 @@ public class SecurityConfig {
                                 "/api/v2/auth/refresh",
                                 "/api/v2/comments/create",
                                 "/api/v2/recipes/create",
-                                "/api/v2/recipes/liked/**",
-                                "/api/v2/users/followed/**",
-                                "api/v2/images"
+                                "/api/v2/recipes/liked/add/**",
+                                "/api/v2/users/followed/add/**",
+                                "/api/v2/images/upload"
                         ).hasRole(ERole.FREE.getRole())
 
                         // Restrict Access through ROLES to PUT
@@ -86,10 +90,10 @@ public class SecurityConfig {
                                 HttpMethod.DELETE,
                                 "/api/v2/comments/delete/**",
                                 "/api/v2/recipes/delete/**",
-                                "/api/v2/recipes/liked/**",
+                                "/api/v2/recipes/liked/delete/**",
                                 "/api/v2/users/delete/**",
-                                "/api/v2/users/followed/**",
-                                "api/v2/images/**"
+                                "/api/v2/users/followed/delete/**",
+                                "/api/v2/images/delete/**"
                         ).hasRole(ERole.FREE.getRole())
 
                         .anyRequest().authenticated()
@@ -98,6 +102,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)  // Ensure JWT filter only applies to non-public endpoints
+                .addFilterBefore(redisBucket4jFilter, JwtFilter.class)
                 .build();
     }
 
@@ -114,4 +119,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-

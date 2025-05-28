@@ -56,7 +56,7 @@ public class UserController {
     }
 
 
-    @GetMapping("/followed/{user_id}")
+    @GetMapping("/followed/search/{user_id}")
     public ResponseEntity<List<FollowedCreatorDTO>> findFollowedCreators(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "search_string", required = false) String searchString,
@@ -80,7 +80,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/followed/{user_id}")
+    @PostMapping("/followed/add/{user_id}")
     public ResponseEntity<FollowedCreator> addFollowedCreator(
             @Valid
             @PathVariable(value = "user_id") UUID userId,
@@ -128,7 +128,7 @@ public class UserController {
         );
     }
 
-    @DeleteMapping("/followed/{user_id}")
+    @DeleteMapping("/followed/delete/{user_id}")
     public ResponseEntity<FollowedCreator> removeFollowedCreator(
             @PathVariable(value = "user_id") UUID userId,
             @RequestParam(value = "creator_id") UUID creatorId,
