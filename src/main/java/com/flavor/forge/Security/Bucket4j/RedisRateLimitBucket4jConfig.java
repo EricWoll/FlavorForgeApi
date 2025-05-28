@@ -84,56 +84,56 @@ public class RedisRateLimitBucket4jConfig {
         */
         policies.put(
                 "/api/v2/recipes/search", Stream.of(
-                        buildPolicyMap(ERole.ANON.getRole(), 15L, 15L, Duration.ofMinutes(1)),
-                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.ANON.getRole(), 10L, 10L, Duration.ofMinutes(1)),
+                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream())
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
                 "/api/v2/recipes/search/**", Stream.of(
-                        buildPolicyMap(ERole.ANON.getRole(), 15L, 15L, Duration.ofMinutes(1)),
-                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.ANON.getRole(), 10L, 10L, Duration.ofMinutes(1)),
+                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream())
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
                 "/api/v2/comments/search/**", Stream.of(
-                        buildPolicyMap(ERole.ANON.getRole(), 15L, 15L, Duration.ofMinutes(1)),
-                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.ANON.getRole(), 10L, 10L, Duration.ofMinutes(1)),
+                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
                 "/api/v2/users/search/**", Stream.of(
+                        buildPolicyMap(ERole.ANON.getRole(), 10L, 10L, Duration.ofMinutes(1)),
+                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
+                ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        );
+
+        policies.put(
+                "/api/v2/images", Stream.of(
                         buildPolicyMap(ERole.ANON.getRole(), 15L, 15L, Duration.ofMinutes(1)),
                         buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
-                "/api/v2/images", Stream.of(
-                        buildPolicyMap(ERole.ANON.getRole(), 30L, 30L, Duration.ofMinutes(1)),
-                        buildPolicyMap(ERole.FREE.getRole(), 60L, 60L, Duration.ofMinutes(1))
-                ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-        );
-
-        policies.put(
                 "/api/v2/users/profile/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 15L, 15L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
                 "/api/v2/recipes/liked/search/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 60L, 60L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
         policies.put(
                 "/api/v2/users/followed/search/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 60L, 60L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 30L, 30L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
@@ -199,12 +199,12 @@ public class RedisRateLimitBucket4jConfig {
          */
         policies.put(
                 "/api/v2/recipes/liked/add/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 15L, 15L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
         policies.put(
                 "/api/v2/recipes/liked/delete/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 15L, 15L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
@@ -213,12 +213,12 @@ public class RedisRateLimitBucket4jConfig {
          */
         policies.put(
                 "/api/v2/users/followed/add/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 15L, 15L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
         policies.put(
                 "/api/v2/users/followed/delete/**", Stream.of(
-                        buildPolicyMap(ERole.FREE.getRole(), 20L, 20L, Duration.ofMinutes(1))
+                        buildPolicyMap(ERole.FREE.getRole(), 15L, 15L, Duration.ofMinutes(1))
                 ).flatMap(m -> m.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         );
 
