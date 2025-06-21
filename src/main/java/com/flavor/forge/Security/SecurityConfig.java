@@ -39,6 +39,18 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
+    public SecurityFilterChain publicChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/api/v2/auth/signup")
+                .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain internalChain(HttpSecurity http) throws Exception {
         return http
                 .securityMatcher("/api/v2/users/update/**", "/api/v2/users/delete/**", "/api/webhooks/**")
@@ -50,36 +62,62 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(3)
+    public SecurityFilterChain publicGetChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher(request -> {
+                    String uri = request.getRequestURI();
+                    String method = request.getMethod();
+                    return "GET".equals(method) && (
+                            uri.startsWith("/api/v2/recipes/search") ||
+                                    uri.startsWith("/api/v2/comments/search/") ||
+                                    uri.startsWith("/api/v2/users/search/") ||
+                                    uri.equals("/api/v2/images")
+                    );
+                })
+                .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(redisBucket4jFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
+    @Order(4)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .securityMatcher("/api/**")
+                .securityMatcher(request -> {
+                    String uri = request.getRequestURI();
+                    String method = request.getMethod();
+
+                    // Skip if handled by publicChain
+                    if ("/api/v2/auth/signup".equals(uri)) {
+                        return false;
+                    }
+
+                    // Skip if handled by internalChain
+                    if (uri.matches("/api/v2/users/update/.*") ||
+                            uri.matches("/api/v2/users/delete/.*") ||
+                            uri.startsWith("/api/webhooks/")) {
+                        return false;
+                    }
+
+                    // Skip if handled by publicGetChain
+                    if ("GET".equals(method) && (
+                            uri.startsWith("/api/v2/recipes/search") ||
+                                    uri.startsWith("/api/v2/comments/search/") ||
+                                    uri.startsWith("/api/v2/users/search/") ||
+                                    uri.equals("/api/v2/images"))) {
+                        return false;
+                    }
+
+                    // Only handle remaining /api/** endpoints
+                    return uri.startsWith("/api/");
+                })
                 .authorizeHttpRequests(authHttp -> authHttp
-
-                        // Allowing public access to login and signup endpoints
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/v2/auth/signup"
-                        ).permitAll()
-
-                        // Allow shared-secret authenticated system requests
-                        .requestMatchers(HttpMethod.PUT, "/api/v2/users/update/**")
-                        .hasRole(ERole.SYSTEM.getRole())
-                        .requestMatchers(HttpMethod.DELETE, "/api/v2/users/delete/**")
-                        .hasRole(ERole.SYSTEM.getRole())
-
-                        // Allow public access to GET
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v2/recipes/search",
-                                "/api/v2/recipes/search/**",
-                                "/api/v2/comments/search/**",
-                                "/api/v2/users/search/**",
-                                "/api/v2/images"
-                        ).permitAll()
-
                         // Restrict Access through ROLES to GET
                         .requestMatchers(
                                 HttpMethod.GET,
