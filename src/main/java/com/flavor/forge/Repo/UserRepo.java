@@ -13,7 +13,9 @@ import java.util.UUID;
 @Repository
 public interface UserRepo extends JpaRepository<User, UUID> {
 
-    Optional<User> findByUserId(UUID userId);
+    Optional<User> findByUserId(String userId);
+
+    Optional<User> findByUsername(String username);
 
     @Query(value = """
             SELECT u.user_id AS userId,
@@ -34,8 +36,8 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             WHERE u.user_id = :creatorId
             """, nativeQuery = true)
     Optional<Object>findPublicUserByUserId(
-            @Param("creatorId") UUID creatorId,
-            @Param("userId") UUID userId
+            @Param("creatorId") String creatorId,
+            @Param("userId") String userId
     );
 
     @Query(value = """
@@ -48,13 +50,8 @@ public interface UserRepo extends JpaRepository<User, UUID> {
                 WHERE u.user_id = :userId
             """, nativeQuery = true)
     Optional<Object>findPrivateUserByUserId(
-            @Param("userId") UUID userId
+            @Param("userId") String userId
     );
 
-    Optional<User> findByUsername(String username);
-
-    boolean existsByUsername(String username);
-    boolean existsByEmail(String email);
-
-    void deleteByUserId(UUID userId);
+    void deleteByUserId(String userId);
 }

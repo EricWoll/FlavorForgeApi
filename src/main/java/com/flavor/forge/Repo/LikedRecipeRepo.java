@@ -19,7 +19,7 @@ public interface LikedRecipeRepo extends JpaRepository<LikedRecipe, UUID> {
                   AND lr.user_id = :userId
             """, nativeQuery = true)
     Optional<LikedRecipe> findLikedRecipeByUserIdAndRecipeId(
-            @Param("userId") UUID userId,
+            @Param("userId") String userId,
             @Param("recipeId") UUID recipeId
     );
 
@@ -35,7 +35,9 @@ public interface LikedRecipeRepo extends JpaRepository<LikedRecipe, UUID> {
                    r.steps,
                    r.likes_count,
                    r.views_count,
-                   TRUE AS isLiked
+                   CAST(
+                    CASE WHEN lr.user_id IS NOT NULL THEN true ELSE false END AS BOOLEAN
+                ) AS isLiked
             FROM recipe r
             INNER JOIN users c ON r.creator_id = c.user_id
             INNER JOIN liked_recipe lr
@@ -45,7 +47,7 @@ public interface LikedRecipeRepo extends JpaRepository<LikedRecipe, UUID> {
             LIMIT :limit OFFSET :listOffset
             """, nativeQuery = true)
     List<Object[]> findLikedRecipesRandom(
-            @Param("userId") UUID userId,
+            @Param("userId") String userId,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
@@ -72,14 +74,14 @@ public interface LikedRecipeRepo extends JpaRepository<LikedRecipe, UUID> {
             LIMIT :limit OFFSET :listOffset
             """, nativeQuery = true)
     List<Object[]> findLikedRecipesWithSearchWordAndFilters(
-            @Param("userId") UUID userId,
+            @Param("userId") String userId,
             @Param("searchWord") String searchWord,
             @Param("ingredients") List<String> ingredients,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
 
-    boolean existsByUser_UserIdAndRecipe_RecipeId(UUID userId, UUID recipeId);
+    boolean existsByUser_UserIdAndRecipe_RecipeId(String userId, UUID recipeId);
 
     void deleteById(UUID likedRecipeId);
 }

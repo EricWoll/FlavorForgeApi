@@ -5,7 +5,6 @@ import com.flavor.forge.Exception.CustomExceptions.CommentNotFoundException;
 import com.flavor.forge.Exception.CustomExceptions.DatabaseCRUDException;
 import com.flavor.forge.Model.Comment;
 import com.flavor.forge.Repo.CommentRepo;
-import com.flavor.forge.Security.Jwt.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +22,11 @@ public class CommentService {
     @Autowired
     private CommentRepo commentRepo;
 
-    @Autowired
-    private JwtService jwtService;
-
     public List<Comment> findCommentsWithRecipe(UUID recipeId) {
         return commentRepo.findAllByAttachedId(recipeId);
     }
 
     public Comment createComment(Comment comment, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, comment.getUserId());
 
         if (
                 comment.getCommentText() == null || comment.getCommentText().isEmpty()
@@ -57,7 +50,6 @@ public class CommentService {
     }
 
     public Comment updateComment(UUID commentId, Comment commentBody, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
 
         if (
                 commentBody.getCommentText() == null || commentBody.getCommentText().isEmpty()
@@ -73,8 +65,6 @@ public class CommentService {
                     return new CommentNotFoundException("Comment Not Found With Id Of: " + commentId);
                 });
 
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
-
         foundComment.setCommentText(commentBody.getCommentText());
 
         try {
@@ -88,14 +78,11 @@ public class CommentService {
     }
 
     public Comment deleteComment(UUID commentId, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
 
         Comment foundComment = commentRepo.findByCommentId(commentId).orElseThrow(()-> {
             logger.error("Comment does not exists with Id of \"{}\" and cannot be deleted!", commentId);
             return new CommentNotFoundException("Comment Not Found for Id: " + commentId);
         });
-
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundComment.getUserId());
 
         try {
             commentRepo.deleteByCommentId(foundComment.getCommentId());

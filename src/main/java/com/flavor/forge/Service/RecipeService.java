@@ -14,7 +14,6 @@ import com.flavor.forge.Model.User;
 import com.flavor.forge.Repo.LikedRecipeRepo;
 import com.flavor.forge.Repo.RecipeRepo;
 import com.flavor.forge.Repo.UserRepo;
-import com.flavor.forge.Security.Jwt.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,30 +40,28 @@ public class RecipeService {
     @Autowired
     private LikedRecipeRepo likedRecipeRepo;
 
-    @Autowired
-    private JwtService jwtService;
-
     @Value("${SEARCH_LIMIT}")
     private short searchLimit;
 
     @Value("${forge.app.noImage}")
     private String noImageId;
 
-    public RecipeWithCreatorDTO findByRecipeId(UUID recipeId, UUID userId) {
+    public RecipeWithCreatorDTO findByRecipeId(UUID recipeId, String userId) {
+        logger.info("UserId: {}", userId);
         Object[] recipe = (Object[]) recipeRepo.findByRecipeIdWithCreator(recipeId, userId).orElseThrow(
                 () -> new RecipeNotFoundException("No recipe with the Id of: " + recipeId + " was found")
         );
         return sqlQueryObjectMapToRecipeWithCreatorDTO(recipe);
     }
 
-    public List<RecipeWithCreatorDTO> defaultSearch(UUID creatorId, UUID userId, int listOffset) {
+    public List<RecipeWithCreatorDTO> defaultSearch(String creatorId, String userId, int listOffset) {
         List<Object[]> recipeList = recipeRepo.findRandomRecipes(creatorId, userId, searchLimit, listOffset);
 
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
 
 
-    public List<RecipeWithCreatorDTO> searchWithSearchWordAndIngredients(String searchWord, List<Ingredient> ingredients, UUID creatorId, UUID userId, int listOffset) {
+    public List<RecipeWithCreatorDTO> searchWithSearchWordAndIngredients(String searchWord, List<Ingredient> ingredients, String creatorId, String userId, int listOffset) {
         String filterIngredientsJson = null;
 
         if (ingredients != null && !ingredients.isEmpty()) {
@@ -88,25 +85,23 @@ public class RecipeService {
     }
 
 
-    public List<RecipeWithCreatorDTO> searchLikedRecipesDefault(UUID userId, int listOffset, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+    public List<RecipeWithCreatorDTO> searchLikedRecipesDefault(String userId, int listOffset, String accessToken) {
+        System.out.println("Searching liked recipes random");
+        System.out.println("UserId: " + userId);
 
         List<Object[]> recipeList = likedRecipeRepo.findLikedRecipesRandom(userId, searchLimit, listOffset);
+        System.out.println(recipeList);
 
         return recipeList.stream().map(this::sqlQueryObjectMapToRecipeWithCreatorDTO).toList();
     }
 
     public List<RecipeWithCreatorDTO> searchLikedRecipesWithSearchWordAndFilters(
-            UUID userId,
+            String userId,
             String searchWord,
             List<Ingredient> ingredients,
             int listOffset,
             String accessToken
     ) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
 
         List<String> ingredientNames = null;
         if (ingredients != null && !ingredients.isEmpty()) {
@@ -123,8 +118,6 @@ public class RecipeService {
     }
 
     public Recipe createRecipe(Recipe recipe, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, recipe.getCreatorId());
 
         if (
                 (recipe.getRecipeName() == null || recipe.getRecipeName().isEmpty())
@@ -135,6 +128,7 @@ public class RecipeService {
             logger.error("Recipe is missing some content and cannot be created!");
             throw new RecipeEmptyException("Recipe Is Missing Some Content!");
         }
+        logger.info("Recipe Image Id: {}", recipe.getImageId());
 
         if (recipe.getImageId() == null || recipe.getImageId().isEmpty()) {
             recipe.setImageId(noImageId);
@@ -144,7 +138,6 @@ public class RecipeService {
     }
 
     public Recipe updateRecipe(UUID recipeId, Recipe recipe, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
 
         if (
                 (recipe.getRecipeName() == null || recipe.getRecipeName().isEmpty())
@@ -164,8 +157,6 @@ public class RecipeService {
                     return new RecipeNotFoundException("Recipe Does Not Exists With Id Of: " + recipeId);
                 });
 
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundRecipe.getCreatorId());
-
         foundRecipe.setImageId(recipe.getImageId());
         foundRecipe.setRecipeName(recipe.getRecipeName());
         foundRecipe.setRecipeDescription(recipe.getRecipeDescription());
@@ -178,7 +169,6 @@ public class RecipeService {
 
     @Transactional
     public Recipe deleteRecipeById(UUID recipeId, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
 
         Recipe foundRecipe = recipeRepo.findByRecipeId(recipeId)
                 .orElseThrow(() -> {
@@ -186,17 +176,13 @@ public class RecipeService {
                     return new RecipeNotFoundException("Recipe Does Not Exists With Id Of: " + recipeId);
                 });
 
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, foundRecipe.getCreatorId());
-
         recipeRepo.deleteByRecipeId(foundRecipe.getRecipeId());
         return  foundRecipe;
     }
 
-    public LikedRecipe addLikedRecipe(UUID userId, UUID recipeId, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+    public LikedRecipe addLikedRecipe(String userId, UUID recipeId, String accessToken) {
 
-        if (likedRecipeRepo.existsByUser_UserIdAndRecipe_RecipeId(recipeId, userId)) {
+        if (likedRecipeRepo.existsByUser_UserIdAndRecipe_RecipeId(userId, recipeId)) {
             throw new RecipeExistsException("Recipe has already been liked by user with id of: " + userId);
         };
 
@@ -207,9 +193,7 @@ public class RecipeService {
     }
 
 
-    public LikedRecipe removeLikedRecipe(UUID userId, UUID recipeId, String accessToken) {
-        jwtService.validateAccessTokenCredentials(accessToken);
-        jwtService.validateAccessTokenAgainstFoundUserId(accessToken, userId);
+    public LikedRecipe removeLikedRecipe(String userId, UUID recipeId, String accessToken) {
 
         LikedRecipe foundLikedRecipe = likedRecipeRepo.findLikedRecipeByUserIdAndRecipeId(userId, recipeId).orElseThrow(
                 () -> new RecipeExistsException("Recipe has NOT been liked by user with id of: " + userId)
@@ -222,7 +206,7 @@ public class RecipeService {
     // Mapper Utility for SQL Queries to Recipes
     private RecipeWithCreatorDTO sqlQueryObjectMapToRecipeWithCreatorDTO(Object[] sqlQueryResult) {
         UUID recipeId = (UUID) sqlQueryResult[0];
-        UUID recipeCreatorId = (UUID) sqlQueryResult[1];
+        String recipeCreatorId = (String) sqlQueryResult[1];
         String creatorImageId = (String) sqlQueryResult[2];
         String creatorUsername = (String) sqlQueryResult[3];
         String recipeName = (String) sqlQueryResult[4];
@@ -232,7 +216,17 @@ public class RecipeService {
         List<String> steps = Arrays.asList((String[]) sqlQueryResult[8]);
         int likesCount = (Integer) sqlQueryResult[9];
         int viewsCount = (Integer) sqlQueryResult[10];
-        boolean isLiked = sqlQueryResult.length > 11 ? (Boolean) sqlQueryResult[11] : false;
+
+        Object isLikedRaw = sqlQueryResult[11];
+        boolean isLiked = false;
+
+        if (isLikedRaw instanceof Boolean) {
+            isLiked = (Boolean) isLikedRaw;
+        } else if (isLikedRaw instanceof Number) {
+            isLiked = ((Number) isLikedRaw).intValue() != 0;
+        } else if (isLikedRaw instanceof String) {
+            isLiked = Boolean.parseBoolean((String) isLikedRaw);
+        }
 
         return new RecipeWithCreatorDTO(
                 recipeId, recipeCreatorId, creatorImageId, creatorUsername,

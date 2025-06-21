@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +36,6 @@ public class CommentController {
         );
     }
 
-
     @PostMapping("/create")
     public ResponseEntity<Comment> createComment(
             @Valid
@@ -47,7 +47,6 @@ public class CommentController {
                 HttpStatus.OK
         );
     }
-
 
     @PutMapping("/update/{comment_id}")
     public ResponseEntity<Comment> updateComment(
@@ -64,7 +63,6 @@ public class CommentController {
                 HttpStatus.OK
         );
     }
-
 
     @DeleteMapping("/delete/{comment_id}")
     public ResponseEntity<Comment> deleteComment(

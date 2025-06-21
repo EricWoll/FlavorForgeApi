@@ -22,7 +22,7 @@ public class Comment {
 
     @NotNull
     @Column(name = "user_id")
-    private UUID userId;
+    private String userId;
 
     @NotNull
     @Column(name = "attached_id")
@@ -34,7 +34,7 @@ public class Comment {
     @Column(name = "comment_text")
     private String commentText;
 
-    public Comment(UUID userId, UUID attachedId, String commentText) {
+    public Comment(String userId, UUID attachedId, String commentText) {
         this.userId = userId;
         this.attachedId = attachedId;
         this.commentText = commentText;

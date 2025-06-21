@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,13 +30,10 @@ public class RecipeController {
     public ResponseEntity<List<RecipeWithCreatorDTO>> searchRecipes(
             @RequestParam(value = "ingredients", required = false) List<Ingredient> ingredients,
             @RequestParam(value = "search_string", required = false) String searchString,
-            @RequestParam(value = "creator_id", required = false) UUID creatorId,
-            @RequestParam(value = "user_id", required = false) UUID userId,
+            @RequestParam(value = "creator_id", required = false) String creatorId,
+            @RequestParam(value = "user_id", required = false) String userId,
             @RequestParam(value = "listOffset", defaultValue = "0") int listOffset
     ) {
-        if (!Utils.validateUUIDs(creatorId, userId)) {
-            return ResponseEntity.badRequest().build();
-        }
 
         boolean hasIngredients = ingredients != null && !ingredients.isEmpty();
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
@@ -55,7 +53,7 @@ public class RecipeController {
     @GetMapping("/search/{recipe_id}")
     public ResponseEntity<RecipeWithCreatorDTO> findSingleRecipe(
             @PathVariable(value = "recipe_id") UUID recipeId,
-            @RequestParam(value = "user_id", required = false) UUID userId
+            @RequestParam(value = "user_id", required = false) String userId
     ) {
         if (!Utils.validateUUIDs(recipeId)) {
             return ResponseEntity.badRequest().build();
@@ -69,21 +67,18 @@ public class RecipeController {
 
     @GetMapping("/liked/search/{user_id}")
     public ResponseEntity<List<RecipeWithCreatorDTO>> searchLikedRecipes (
-            @PathVariable(value = "user_id") UUID userId,
+            @PathVariable(value = "user_id") String userId,
             @RequestParam(value = "filters", required = false) List<Ingredient> filters,
             @RequestParam(value = "search_string", required = false) String searchString,
             @RequestParam(value = "listOffset", defaultValue = "0") int listOffset,
             @RequestHeader (name="Authorization") String accessToken
     ) {
-        if (!Utils.validateUUIDs(userId)) {
-            return ResponseEntity.badRequest().build();
-        }
         boolean hasFilters = filters != null && !filters.isEmpty();
         boolean hasSearchString = searchString != null && !searchString.isEmpty();
 
         List<RecipeWithCreatorDTO> results;
 
-        if (hasFilters && hasSearchString) {
+        if (hasFilters || hasSearchString) {
             results = recipeService.searchLikedRecipesWithSearchWordAndFilters(userId, searchString, filters, listOffset, accessToken);
         } else {
             results = recipeService.searchLikedRecipesDefault(userId, listOffset, accessToken);
@@ -91,7 +86,6 @@ public class RecipeController {
 
         return ResponseEntity.ok(results);
     }
-
 
     @PostMapping("/create")
     public ResponseEntity<Recipe> createRecipe(
@@ -106,11 +100,11 @@ public class RecipeController {
 
     @PostMapping("/liked/add/{user_id}")
     public ResponseEntity<LikedRecipe> addLikedRecipe(
-            @PathVariable(value = "user_id") UUID userId,
+            @PathVariable(value = "user_id") String userId,
             @RequestParam(value = "recipe_id") UUID recipeId,
             @RequestHeader(name="Authorization") String accessToken
     ) {
-        if (!Utils.validateUUIDs(userId, recipeId)) {
+        if (!Utils.validateUUIDs(recipeId)) {
             return ResponseEntity.badRequest().build();
         }
         return  new ResponseEntity<LikedRecipe>(
@@ -118,7 +112,6 @@ public class RecipeController {
                 HttpStatus.CREATED
         );
     }
-
 
     @PutMapping("/update/{recipe_id}")
     public ResponseEntity<Recipe> updateRecipe(
@@ -136,7 +129,6 @@ public class RecipeController {
         );
     }
 
-
     @DeleteMapping("/delete/{recipe_id}")
     public ResponseEntity<Recipe> deleteRecipe(
             @PathVariable(value = "recipe_id") UUID recipeId,
@@ -153,11 +145,11 @@ public class RecipeController {
 
     @DeleteMapping("/liked/delete/{user_id}")
     public ResponseEntity<LikedRecipe> removeLikedRecipe(
-            @PathVariable(value = "user_id") UUID userId,
+            @PathVariable(value = "user_id") String userId,
             @RequestParam(value = "recipe_id") UUID recipeId,
             @RequestHeader (name="Authorization") String accessToken
     ) {
-        if (!Utils.validateUUIDs(userId, recipeId)) {
+        if (!Utils.validateUUIDs(recipeId)) {
             return ResponseEntity.badRequest().build();
         }
         return new ResponseEntity<LikedRecipe>(

@@ -2,51 +2,73 @@ package com.flavor.forge.Security;
 
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Security.Bucket4j.RedisRateLimitBucket4jFilter;
-import com.flavor.forge.Security.Jwt.JwtFilter;
-import com.flavor.forge.Security.Service.UserDetailsServiceImpl;
+import com.flavor.forge.Security.Clerk.ClerkAuthFilter;
+import com.flavor.forge.Security.SharedSecret.SharedSecretFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.AntPathMatcher;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
-    private JwtFilter jwtFilter;
 
     @Autowired
     private RedisRateLimitBucket4jFilter redisBucket4jFilter;
 
+    @Autowired
+    private ClerkAuthFilter clerkAuthFilter;
+
+    @Autowired
+    private SharedSecretFilter sharedSecretFilter;
+
     @Bean
+    @Order(1)
+    public SecurityFilterChain internalChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/api/v2/users/update/**", "/api/v2/users/delete/**", "/api/webhooks/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole(ERole.SYSTEM.getRole()))
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(sharedSecretFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                .securityMatcher("/api/**")
                 .authorizeHttpRequests(authHttp -> authHttp
 
                         // Allowing public access to login and signup endpoints
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/api/v2/auth/signup",
-                                "/api/v2/auth/login"
+                                "/api/v2/auth/signup"
                         ).permitAll()
+
+                        // Allow shared-secret authenticated system requests
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/users/update/**")
+                        .hasRole(ERole.SYSTEM.getRole())
+                        .requestMatchers(HttpMethod.DELETE, "/api/v2/users/delete/**")
+                        .hasRole(ERole.SYSTEM.getRole())
 
                         // Allow public access to GET
                         .requestMatchers(
@@ -80,9 +102,8 @@ public class SecurityConfig {
                         // Restrict Access through ROLES to PUT
                         .requestMatchers(
                                 HttpMethod.PUT,
-                                "api/v2/comments/update/**",
-                                "/api/v2/recipes/update/**",
-                                "/api/v2/users/update/**"
+                                "/api/v2/comments/update/**",
+                                "/api/v2/recipes/update/**"
                         ).hasRole(ERole.FREE.getRole())
 
                         // Restrict Access through ROLES to DELETE
@@ -91,31 +112,30 @@ public class SecurityConfig {
                                 "/api/v2/comments/delete/**",
                                 "/api/v2/recipes/delete/**",
                                 "/api/v2/recipes/liked/delete/**",
-                                "/api/v2/users/delete/**",
                                 "/api/v2/users/followed/delete/**",
                                 "/api/v2/images/delete/**"
                         ).hasRole(ERole.FREE.getRole())
 
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
-                .authenticationProvider(authenticationProvider())
+                // Use JWT Bearer token from Clerk
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .decoder(redisBucket4jFilter.jwtDecoder())
+                                .jwtAuthenticationConverter(redisBucket4jFilter.jwtAuthenticationConverter())
+                        )
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)  // Ensure JWT filter only applies to non-public endpoints
-                .addFilterBefore(redisBucket4jFilter, JwtFilter.class)
+                .addFilterBefore(clerkAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(redisBucket4jFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(new BCryptPasswordEncoder(BCryptPasswordEncoder.BCryptVersion.$2Y, 12));
-        provider.setUserDetailsService(userDetailsService);
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    @Order(99)
+    public SecurityFilterChain fallbackChain(HttpSecurity http) throws Exception {
+        return http
+                .authorizeHttpRequests(auth -> auth.anyRequest().denyAll())
+                .build();
     }
 }

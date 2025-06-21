@@ -12,7 +12,7 @@ import java.util.UUID;
 @Setter
 @Builder
 public class FollowedCreatorDTO {
-    private UUID userId;
+    private String userId;
     private String username;
     private String imageId;
     private int followerCount;

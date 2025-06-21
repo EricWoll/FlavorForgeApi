@@ -13,7 +13,7 @@ public interface CommentRepo extends JpaRepository<Comment, UUID> {
 
     Optional<Comment> findByCommentId(UUID commentId);
     List<Comment> findAllByAttachedId(UUID attachedId);
-    List<Comment> findAllByUserId(UUID userId);
+    List<Comment> findAllByUserId(String userId);
 
     void deleteByCommentId(UUID commentId);
 }

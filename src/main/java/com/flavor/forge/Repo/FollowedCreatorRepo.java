@@ -14,7 +14,7 @@ import java.util.UUID;
 @Repository
 public interface FollowedCreatorRepo extends JpaRepository<FollowedCreator, UUID> {
 
-    Optional<FollowedCreator> findByUser_UserIdAndCreator_UserId(UUID userId, UUID creatorId);
+    Optional<FollowedCreator> findByUser_UserIdAndCreator_UserId(String userId, String creatorId);
 
     @Query(value = """
             SELECT
@@ -29,7 +29,7 @@ public interface FollowedCreatorRepo extends JpaRepository<FollowedCreator, UUID
             LIMIT :limit OFFSET :listOffset
             """, nativeQuery = true)
     List<Object[]> findAllByUserId(
-            @Param("userId") UUID userId,
+            @Param("userId") String userId,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
@@ -48,13 +48,13 @@ public interface FollowedCreatorRepo extends JpaRepository<FollowedCreator, UUID
                 LIMIT :limit OFFSET :listOffset
             """, nativeQuery = true)
     List<Object[]> searchWithString(
-            @Param("userId") UUID userId,
+            @Param("userId") String userId,
             @Param("creatorName") String creatorName,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
 
-    boolean existsByUser_UserIdAndCreator_UserId(UUID userId, UUID creatorId);
+    boolean existsByUser_UserIdAndCreator_UserId(String userId, String creatorId);
 
-    void deleteByUser_UserIdAndCreator_UserId(UUID userId, UUID creatorId);
+    void deleteByUser_UserIdAndCreator_UserId(String userId, String creatorId);
 }

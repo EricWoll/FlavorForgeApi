@@ -13,7 +13,7 @@ public class AuthDTO {
     private String accessToken;
     private String refreshToken;
     private String username;
-    private UUID userId;
+    private String userId;
     private String email;
     private ERole role;
     private String imageId;

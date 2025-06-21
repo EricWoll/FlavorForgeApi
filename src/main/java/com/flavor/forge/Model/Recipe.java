@@ -26,7 +26,7 @@ public class Recipe {
 
     @NotNull
     @Column(name = "creator_id")
-    private UUID creatorId;
+    private String creatorId;
 
     @NotNull
     @NotEmpty
@@ -67,7 +67,7 @@ public class Recipe {
     private boolean isPrivate;
 
     public Recipe(
-            UUID creatorId,
+            String creatorId,
             String recipeName,
             String recipeDescription,
             List<Ingredient> ingredients,

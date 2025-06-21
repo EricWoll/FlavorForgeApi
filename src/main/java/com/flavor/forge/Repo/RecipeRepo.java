@@ -27,15 +27,17 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
         r.steps AS steps,
         r.likes_count AS likesCount,
         r.views_count AS viewsCount,
-        CAST(
-            CASE WHEN lr.user_id IS NOT NULL THEN true ELSE false END AS BOOLEAN
+        EXISTS (
+            SELECT 1
+            FROM liked_recipe lr
+            WHERE lr.recipe_id = r.recipe_id AND lr.user_id = :userId
         ) AS isLiked
     FROM recipe r
     INNER JOIN users c ON r.creator_id = c.user_id
     LEFT JOIN liked_recipe lr ON lr.recipe_id = r.recipe_id AND lr.user_id = :userId
     WHERE r.recipe_id = :recipeId
 """, nativeQuery = true)
-    Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId, @Param("userId") UUID userId);
+    Optional<Object> findByRecipeIdWithCreator(@Param("recipeId") UUID recipeId, @Param("userId") String userId);
 
 
     @Query(value = """
@@ -78,8 +80,8 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
         LIMIT :limit OFFSET :listOffset
         """, nativeQuery = true)
     List<Object[]> findRandomRecipes(
-            @Param("creatorId") UUID creatorId,
-            @Param("userId") UUID userId,
+            @Param("creatorId") String creatorId,
+            @Param("userId") String userId,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );
@@ -111,8 +113,8 @@ public interface RecipeRepo extends JpaRepository<Recipe, UUID> {
     List<Object[]> findRecipesWithSearchWordAndIngredients(
             @Param("searchWord") String searchWord,
             @Param("ingredientsJson") String ingredientsJson,
-            @Param("creatorId") UUID creatorId,
-            @Param("userId") UUID userId,
+            @Param("creatorId") String creatorId,
+            @Param("userId") String userId,
             @Param("limit") short limit,
             @Param("listOffset") int listOffset
     );

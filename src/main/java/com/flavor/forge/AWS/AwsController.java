@@ -16,19 +16,19 @@ public class AwsController {
     @Autowired
     private AwsService awsService;
 
-    @GetMapping
-    public ResponseEntity<byte[]> downloadFile(@RequestParam("filename") String fileName) throws IOException {
-        var fileContent= awsService.downloadFileFromS3(fileName);
-        // Set appropriate headers for the file content
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_JPEG); // Adjust based on your file type
-
-        // Return the file content as part of the response body
-        return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
-    }
+//    @GetMapping
+//    public ResponseEntity<byte[]> downloadFile(@RequestParam("filename") String fileName) throws IOException {
+//        var fileContent= awsService.downloadFileFromS3(fileName);
+//        // Set appropriate headers for the file content
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.IMAGE_JPEG); // Adjust based on your file type
+//
+//        // Return the file content as part of the response body
+//        return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+//    }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadFile(
+    public ResponseEntity<String> uploadFile(
             @RequestParam("image") MultipartFile file,
             @RequestParam("objectKey") String objectKey,
             @RequestParam("newObjectKey") String newObjectKey,
@@ -40,9 +40,10 @@ public class AwsController {
                 return new ResponseEntity<>("No file uploaded", HttpStatus.BAD_REQUEST);
             }
 
-            // Upload the file to S3
-            awsService.uploadFileToS3(file, objectKey, newObjectKey, updateFile);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Successful upload
+            // Upload the file to S3 and get the URL
+            String s3Url = awsService.uploadFileToS3(file, objectKey, newObjectKey, updateFile);
+
+            return new ResponseEntity<>(s3Url, HttpStatus.OK); // Return the S3 URL with 200 OK
 
         } catch (IOException e) {
             return new ResponseEntity<>("File upload failed", HttpStatus.INTERNAL_SERVER_ERROR); // Server error

@@ -12,7 +12,7 @@ import java.util.UUID;
 @Setter
 @Builder
 public class PrivateUserDTO {
-    private UUID userId;
+    private String userId;
     private String username;
     private String email;
     private String imageId;

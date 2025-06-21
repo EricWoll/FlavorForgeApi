@@ -18,6 +18,7 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(corsLink)
                 .allowedMethods("GET", "PUT", "POST", "DELETE", "OPTIONS")
+                .allowedHeaders("Content-Type", "Authorization", "svix-id", "nextjs-shared-secret")
                 .allowCredentials(true);
     }
 }

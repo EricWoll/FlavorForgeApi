@@ -44,7 +44,7 @@ public class RedisRateLimitBucket4jConfig {
         return Bucket4jLettuce.casBasedBuilder(connection)
                     .expirationAfterWrite(
                             ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
-                                    Duration.ofHours(3)
+                                    Duration.ofHours(6)
                             )
                     )
                     .build();

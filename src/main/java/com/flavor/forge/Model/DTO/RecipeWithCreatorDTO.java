@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 public class RecipeWithCreatorDTO {
     private UUID recipeId;
-    private UUID creatorId;
+    private String creatorId;
     private String creatorImageId;
     private String creatorUsername;
     private String recipeName;
@@ -26,7 +26,7 @@ public class RecipeWithCreatorDTO {
     private boolean isLiked;
 
     // Constructor that takes the values from the query result
-    public RecipeWithCreatorDTO(UUID recipeId, UUID creatorId, String creatorImageId, String creatorUsername,
+    public RecipeWithCreatorDTO(UUID recipeId, String creatorId, String creatorImageId, String creatorUsername,
                                 String recipeName, String recipeImageId, String recipeDescription,
                                 String ingredientsJson, List<String> stepsJson, int likesCount,
                                 int viewsCount, boolean isLiked) {
@@ -52,5 +52,3 @@ public class RecipeWithCreatorDTO {
         }
     }
 }
-
-
