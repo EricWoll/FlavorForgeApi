@@ -1,6 +1,7 @@
 package com.flavor.forge.Security.Bucket4j;
 
 import com.flavor.forge.Model.ERole;
+import com.flavor.forge.Security.Jwt.JwtConfig;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
@@ -42,8 +43,8 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
     @Value("${forge.app.jwtSecret}")
     private String jwtSecret;
 
-    @Value("${forge.app.clerk.jwksUrl}")
-    private String clerkJwksUrl;
+    @Autowired
+    private JwtConfig jwtConfig;
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -84,7 +85,7 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
             userId = ipAddr;
         } else {
             try {
-                Jwt jwt = jwtDecoder().decode(token);
+                Jwt jwt = jwtConfig.jwtDecoder().decode(token);
                 userId = jwt.getSubject(); // Clerk userId from "sub" claim
 
                 Object roleClaim = jwt.getClaim("userRole"); // or "publicMetadata.role" based on your config
@@ -138,48 +139,5 @@ public class RedisRateLimitBucket4jFilter extends OncePerRequestFilter {
     private String extractBearerToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
         return authHeader.substring(7);
-    }
-
-    /**
-     * JwtDecoder configured to validate Clerk's JWT tokens using their JWKS URL.
-     * Replace `CLERK_JWKS_URL` with the correct URL from Clerk docs.
-     */
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSetUri(clerkJwksUrl).build();
-    }
-
-    /**
-     * Converts Clerk JWT claims into Spring Security Authorities.
-     * For example, map Clerk's `role` or `claims` to `ROLE_FREE` etc.
-     */
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            // Extract roles from the token claims; example assumes 'role' claim is a string or array
-            Object rolesClaim = jwt.getClaim("userRole"); // or use a custom claim name from Clerk
-
-            if (rolesClaim == null) {
-                return List.of(new SimpleGrantedAuthority("ROLE_" + ERole.FREE.getRole())); // no roles found
-            }
-
-            Collection<GrantedAuthority> authorities;
-
-            if (rolesClaim instanceof String) {
-                authorities = List.of(new SimpleGrantedAuthority("ROLE_" + rolesClaim.toString().toUpperCase()));
-            } else if (rolesClaim instanceof Collection) {
-                authorities = ((Collection<?>) rolesClaim).stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toString().toUpperCase()))
-                        .collect(Collectors.toList());
-            } else {
-                authorities = List.of();
-            }
-
-            return authorities;
-        });
-
-        return converter;
     }
 }

@@ -3,6 +3,7 @@ package com.flavor.forge.Security;
 import com.flavor.forge.Model.ERole;
 import com.flavor.forge.Security.Bucket4j.RedisRateLimitBucket4jFilter;
 import com.flavor.forge.Security.Clerk.ClerkAuthFilter;
+import com.flavor.forge.Security.Jwt.JwtConfig;
 import com.flavor.forge.Security.SharedSecret.SharedSecretFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class SecurityConfig {
 
     @Autowired
     private SharedSecretFilter sharedSecretFilter;
+
+    @Autowired
+    private JwtConfig jwtConfig;
 
     @Bean
     @Order(1)
@@ -159,8 +163,8 @@ public class SecurityConfig {
                 // Use JWT Bearer token from Clerk
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
-                                .decoder(redisBucket4jFilter.jwtDecoder())
-                                .jwtAuthenticationConverter(redisBucket4jFilter.jwtAuthenticationConverter())
+                                .decoder(jwtConfig.jwtDecoder())
+                                .jwtAuthenticationConverter(jwtConfig.jwtAuthenticationConverter())
                         )
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
