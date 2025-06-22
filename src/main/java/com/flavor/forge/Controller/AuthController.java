@@ -1,20 +1,17 @@
 package com.flavor.forge.Controller;
 
-import com.flavor.forge.Model.DTO.AuthDTO;
 import com.flavor.forge.Model.ProcessedWebHookEvent;
 import com.flavor.forge.Model.User;
 import com.flavor.forge.Repo.ProcessedWebHookEventRepository;
 import com.flavor.forge.Service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("api/v2/auth")
 public class AuthController {
 
