@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v2/auth/signup").permitAll()
 
                         // Internal system endpoints - require SYSTEM role via shared secret
-                        .requestMatchers("/api/v2/users/update/**", "/api/v2/users/delete/**", "/api/webhooks/**")
+                        .requestMatchers("/api/v2/users/update/**", "/api/v2/users/delete/**")
                         .hasRole(ERole.SYSTEM.getRole())
 
                         // Public GET endpoints - no authentication but rate limited

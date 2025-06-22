@@ -79,6 +79,7 @@ public class UserService {
     @Transactional
     public User createUser(User user, String eventId) {
         // Acquire a lock for this user (or you could key by eventId if that suits your use case better)
+        logger.info("Starting to create User!");
         Object lock = locks.computeIfAbsent(user.getUserId(), k -> new Object());
 
         synchronized (lock) {
